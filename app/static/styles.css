@@ -26,6 +26,13 @@ header {
   flex-wrap: wrap;
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
 header h1 {
   margin: 0 0 0.25rem;
   font-size: 1.8rem;
@@ -80,6 +87,122 @@ main.exam-layout {
 
 main.exam-layout .panel {
   width: min(100%, 760px);
+}
+
+main.memorize-layout {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1.5rem 3rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+main.memorize-layout .panel {
+  width: min(100%, 820px);
+}
+
+.memorize-panel-header {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.memorize-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.memorize-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.memorize-selectors {
+  gap: 1rem;
+}
+
+.memorize-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.memorize-table {
+  flex: 1;
+}
+
+.memorize-table .empty {
+  text-align: center;
+  color: #64748b;
+  padding: 1.5rem 0;
+}
+
+.term-cell,
+.meaning-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.term-cell .value-text {
+  font-weight: 600;
+}
+
+.value-text {
+  display: inline;
+}
+
+.value-hidden {
+  display: none;
+  color: #94a3b8;
+}
+
+.preview-term,
+.preview-meaning {
+  display: none;
+  align-self: flex-start;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.memorize-table.hide-term .term-cell .value-text {
+  display: none;
+}
+
+.memorize-table.hide-term .term-cell .value-hidden {
+  display: inline;
+}
+
+.memorize-table.hide-term .term-cell .preview-term {
+  display: inline-flex;
+}
+
+.memorize-table.hide-term tr.peek-term .term-cell .value-text {
+  display: inline;
+}
+
+.memorize-table.hide-term tr.peek-term .term-cell .value-hidden {
+  display: none;
+}
+
+.memorize-table.hide-meaning .meaning-cell .value-text {
+  display: none;
+}
+
+.memorize-table.hide-meaning .meaning-cell .value-hidden {
+  display: inline;
+}
+
+.memorize-table.hide-meaning .meaning-cell .preview-meaning {
+  display: inline-flex;
+}
+
+.memorize-table.hide-meaning tr.peek-meaning .meaning-cell .value-text {
+  display: inline;
+}
+
+.memorize-table.hide-meaning tr.peek-meaning .meaning-cell .value-hidden {
+  display: none;
 }
 
 #folders {
@@ -238,6 +361,11 @@ button {
 button.secondary {
   background: rgba(37, 99, 235, 0.1);
   color: #1f2937;
+}
+
+button.secondary[data-active="true"] {
+  background: rgba(37, 99, 235, 0.22);
+  color: #1d4ed8;
 }
 
 button.primary {
@@ -642,6 +770,14 @@ tbody tr:hover {
     width: 100%;
   }
 
+  main.memorize-layout {
+    padding: 2rem 1rem 2.5rem;
+  }
+
+  main.memorize-layout .panel {
+    width: 100%;
+  }
+
   .group-select-actions {
     width: 100%;
     justify-content: flex-start;
@@ -654,6 +790,10 @@ tbody tr:hover {
   .header-content {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: center;
   }
 
   .link-button {
