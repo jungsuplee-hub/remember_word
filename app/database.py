@@ -46,7 +46,7 @@ def ensure_schema() -> None:
         if "is_retry" not in quiz_session_columns:
             connection.execute(
                 text(
-                    "ALTER TABLE quiz_sessions ADD COLUMN is_retry BOOLEAN NOT NULL DEFAULT 0"
+                    "ALTER TABLE quiz_sessions ADD COLUMN is_retry BOOLEAN NOT NULL DEFAULT FALSE"
                 )
             )
 
