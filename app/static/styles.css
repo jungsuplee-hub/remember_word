@@ -127,6 +127,40 @@ main.memorize-layout .panel {
   justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.audio-language-control {
+  margin: 0;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.85rem;
+  min-height: 2.25rem;
+  flex-wrap: wrap;
+}
+
+.audio-language-control legend {
+  padding: 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.audio-language-control label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.audio-language-control input[type='radio'] {
+  accent-color: #1d4ed8;
 }
 
 .memorize-selectors {

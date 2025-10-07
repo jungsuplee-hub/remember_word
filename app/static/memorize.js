@@ -8,6 +8,7 @@ const state = {
   hideMeaning: false,
   peekTerm: new Set(),
   peekMeaning: new Set(),
+  audioLanguage: 'auto',
 };
 
 const toast = document.querySelector('#toast');
@@ -18,6 +19,20 @@ const tableBody = document.querySelector('#memorize-word-table');
 const tableContainer = document.querySelector('#memorize-table-container');
 const toggleTermBtn = document.querySelector('#toggle-term');
 const toggleMeaningBtn = document.querySelector('#toggle-meaning');
+const audioLanguageInputs = document.querySelectorAll("input[name='audio-language']");
+
+const AUDIO_LANGUAGE_LABELS = {
+  auto: '자동',
+  'en-US': '영어',
+  'ko-KR': '한글',
+  'zh-CN': '한자',
+};
+
+audioLanguageInputs.forEach((input) => {
+  if (input.checked) {
+    state.audioLanguage = input.value;
+  }
+});
 
 const speech = {
   supported:
@@ -26,6 +41,7 @@ const speech = {
     'SpeechSynthesisUtterance' in window,
   voices: [],
   warningShown: false,
+  missingVoiceWarnings: new Set(),
 };
 
 function loadVoices() {
@@ -64,6 +80,43 @@ function selectVoiceForLang(lang) {
   return speech.voices.find((voice) => voice.lang && voice.lang.startsWith(base));
 }
 
+function getAudioLanguageLabel(lang = state.audioLanguage) {
+  return AUDIO_LANGUAGE_LABELS[lang] || AUDIO_LANGUAGE_LABELS.auto;
+}
+
+function resolveSpeechLanguage(term) {
+  if (state.audioLanguage === 'auto') {
+    return detectLanguageFromTerm(term);
+  }
+  return state.audioLanguage;
+}
+
+function updateAudioButtonA11y(button) {
+  if (!button) return;
+  const term = button.dataset.term || '';
+  const languageLabel = getAudioLanguageLabel();
+  const isAuto = state.audioLanguage === 'auto';
+  const ariaLabel = isAuto
+    ? `${term} 발음 듣기`
+    : `${term} ${languageLabel} 발음 듣기`;
+
+  button.setAttribute('aria-label', ariaLabel.trim());
+  button.title = isAuto ? '발음 듣기' : `${languageLabel} 발음 듣기`;
+}
+
+function updateAllAudioButtonsAria() {
+  tableBody.querySelectorAll('.term-audio').forEach((button) => {
+    updateAudioButtonA11y(button);
+  });
+}
+
+function notifyMissingVoice(lang) {
+  if (!lang || speech.missingVoiceWarnings.has(lang)) return;
+  speech.missingVoiceWarnings.add(lang);
+  const label = getAudioLanguageLabel(lang);
+  showToast(`${label} 음성을 찾을 수 없어 기본 음성으로 재생됩니다.`, 'info');
+}
+
 function speakTerm(term) {
   if (!term) return;
   if (!speech.supported) {
@@ -75,13 +128,15 @@ function speakTerm(term) {
   }
 
   const utterance = new SpeechSynthesisUtterance(term);
-  const lang = detectLanguageFromTerm(term);
+  const lang = resolveSpeechLanguage(term);
   utterance.lang = lang;
   utterance.rate = 0.9;
 
   const voice = selectVoiceForLang(lang);
   if (voice) {
     utterance.voice = voice;
+  } else if (state.audioLanguage !== 'auto') {
+    notifyMissingVoice(state.audioLanguage);
   }
 
   window.speechSynthesis.cancel();
@@ -95,8 +150,8 @@ function createAudioButton(term) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'term-audio';
-  button.setAttribute('aria-label', `${trimmed} 발음 듣기`);
-  button.title = '발음 듣기';
+  button.dataset.term = trimmed;
+  updateAudioButtonA11y(button);
   if (!speech.supported) {
     button.disabled = true;
     button.setAttribute('aria-disabled', 'true');
@@ -312,6 +367,7 @@ function renderWords() {
     updateRowState(row);
   });
 
+  updateAllAudioButtonsAria();
   updateSubtitle();
   updateToggleButtons();
 }
@@ -541,6 +597,20 @@ function handleKeyDown(event) {
 }
 
 tableBody.addEventListener('keydown', handleKeyDown);
+
+audioLanguageInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    if (!input.checked) return;
+    state.audioLanguage = input.value;
+    updateAllAudioButtonsAria();
+    if (speech.supported && state.audioLanguage !== 'auto') {
+      const voice = selectVoiceForLang(state.audioLanguage);
+      if (!voice) {
+        notifyMissingVoice(state.audioLanguage);
+      }
+    }
+  });
+});
 
 toggleTermBtn.addEventListener('click', () => {
   if (!state.words.length) return;
