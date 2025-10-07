@@ -18,7 +18,7 @@ def create_word(payload: schemas.WordCreate, db: Session = Depends(get_db)):
 @router.get("", response_model=list[schemas.WordOut])
 def list_words(
     group_id: int,
-    min_star: int | None = Query(default=None, ge=0, le=5),
+    min_star: int | None = Query(default=None, ge=0, le=schemas.MAX_STAR_RATING),
     star_values: list[int] | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
@@ -106,7 +106,7 @@ async def import_words(
             ivalue = int(value)
         except (TypeError, ValueError):
             return None
-        return max(0, min(5, ivalue))
+        return max(0, min(schemas.MAX_STAR_RATING, ivalue))
 
     for row in df.to_dict(orient="records"):
         obj = db.query(models.Word).filter(

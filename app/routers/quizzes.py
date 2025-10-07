@@ -7,6 +7,8 @@ import random
 
 router = APIRouter()
 
+MAX_STAR_SCORE = schemas.MAX_STAR_RATING
+
 
 def _serialize_star_values(values: list[int] | None) -> str | None:
     if not values:
@@ -91,6 +93,7 @@ def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db))
         include_star_min=payload.min_star,
         include_star_values=_serialize_star_values(payload.star_values),
         total_questions=len(words),
+        is_retry=False,
     )
     db.add(session)
     db.flush()
@@ -158,6 +161,13 @@ def submit_answer(session_id: int, payload: schemas.QuizAnswerSubmit, db: Sessio
     question.user_answer = payload.answer
     question.is_correct = payload.is_correct
 
+    should_increment_star = (
+        session.mode == "exam"
+        and not session.is_retry
+        and not previously_answered
+        and not payload.is_correct
+    )
+
     if not previously_answered:
         session.answered_questions += 1
         if payload.is_correct:
@@ -167,6 +177,11 @@ def submit_answer(session_id: int, payload: schemas.QuizAnswerSubmit, db: Sessio
             session.correct_questions -= 1
         elif (not previous_correct) and payload.is_correct:
             session.correct_questions += 1
+
+    if should_increment_star:
+        word = question.word
+        if word is not None:
+            word.star = min(MAX_STAR_SCORE, (word.star or 0) + 1)
 
     db.commit()
     db.refresh(session)
@@ -221,6 +236,7 @@ def retry_incorrect(session_id: int, payload: schemas.QuizRetryRequest | None = 
         include_star_min=session.include_star_min,
         include_star_values=session.include_star_values,
         total_questions=len(ordered_questions),
+        is_retry=True,
     )
     db.add(new_session)
     db.flush()
