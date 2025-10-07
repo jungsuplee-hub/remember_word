@@ -1,4 +1,14 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, func, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    ForeignKey,
+    DateTime,
+    func,
+    UniqueConstraint,
+    Boolean,
+)
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -19,6 +29,7 @@ class Group(Base):
     created_at = Column(DateTime, server_default=func.now())
     folder = relationship("Folder", back_populates="groups")
     words = relationship("Word", back_populates="group", cascade="all,delete")
+    quiz_sessions = relationship("QuizSession", back_populates="group", cascade="all,delete")
 
 class Word(Base):
     __tablename__ = "words"
@@ -31,7 +42,52 @@ class Word(Base):
     pos = Column(String)
     example = Column(Text)
     memo = Column(Text)
+    star = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime, server_default=func.now())
     group = relationship("Group", back_populates="words")
     __table_args__ = (UniqueConstraint("group_id", "language", "term", name="uq_group_lang_term"),)
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True)
+    created_at = Column(DateTime, server_default=func.now())
+    sessions = relationship("QuizSession", back_populates="profile", cascade="all,delete")
+
+
+class QuizSession(Base):
+    __tablename__ = "quiz_sessions"
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=True)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    direction = Column(String, nullable=False)  # term_to_meaning or meaning_to_term
+    mode = Column(String, nullable=False)
+    randomize = Column(Boolean, nullable=False, default=True)
+    limit_count = Column(Integer)
+    include_star_min = Column(Integer)
+    include_star_values = Column(String)
+    total_questions = Column(Integer, nullable=False)
+    answered_questions = Column(Integer, nullable=False, default=0)
+    correct_questions = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+    profile = relationship("Profile", back_populates="sessions")
+    group = relationship("Group", back_populates="quiz_sessions")
+    questions = relationship("QuizQuestion", back_populates="session", cascade="all,delete")
+
+
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+    id = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("quiz_sessions.id"), nullable=False)
+    word_id = Column(Integer, ForeignKey("words.id"), nullable=False)
+    position = Column(Integer, nullable=False)
+    prompt_text = Column(Text, nullable=False)
+    answer_text = Column(Text, nullable=False)
+    user_answer = Column(Text)
+    is_correct = Column(Boolean)
+    created_at = Column(DateTime, server_default=func.now())
+    session = relationship("QuizSession", back_populates="questions")
+    word = relationship("Word")
 

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import folders, groups, words
+from routers import folders, groups, words, profiles, quizzes
 
 app = FastAPI(title="Remember Word", version="1.0")
 
@@ -10,3 +10,5 @@ def root():
 app.include_router(folders.router, prefix="/folders", tags=["folders"])
 app.include_router(groups.router,  prefix="/groups",  tags=["groups"])
 app.include_router(words.router,   prefix="/words",   tags=["words"])
+app.include_router(profiles.router, prefix="/profiles", tags=["profiles"])
+app.include_router(quizzes.router,  prefix="/quizzes",  tags=["quizzes"])
