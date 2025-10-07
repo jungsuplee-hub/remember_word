@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remember Word</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Remember Word</h1>
+      <p>폴더와 그룹을 만들고 단어를 추가해보세요.</p>
+    </header>
+
+    <main>
+      <section id="folders" class="panel">
+        <div class="panel-header">
+          <h2>폴더</h2>
+          <button id="refresh-folders" class="secondary">새로고침</button>
+        </div>
+        <ul id="folder-list" class="list"></ul>
+        <form id="folder-form" class="form">
+          <h3>새 폴더 만들기</h3>
+          <label>
+            이름
+            <input name="name" type="text" placeholder="예: 영어 어휘" required />
+          </label>
+          <button type="submit">추가</button>
+        </form>
+      </section>
+
+      <section id="groups" class="panel">
+        <div class="panel-header">
+          <h2>그룹</h2>
+          <span class="panel-subtitle" id="groups-subtitle">폴더를 선택하세요</span>
+        </div>
+        <ul id="group-list" class="list"></ul>
+        <form id="group-form" class="form">
+          <h3>새 그룹 만들기</h3>
+          <label>
+            이름
+            <input name="name" type="text" placeholder="예: Day 1" required />
+          </label>
+          <button type="submit">추가</button>
+        </form>
+      </section>
+
+      <section id="words" class="panel">
+        <div class="panel-header">
+          <h2>단어</h2>
+          <div class="word-controls">
+            <label>
+              최소 별점
+              <select id="word-min-star">
+                <option value="">전체</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+            <button id="refresh-words" class="secondary">필터 적용</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>언어</th>
+                <th>단어</th>
+                <th>뜻</th>
+                <th>별</th>
+              </tr>
+            </thead>
+            <tbody id="word-table"></tbody>
+          </table>
+        </div>
+
+        <form id="word-form" class="form">
+          <h3>단어 추가</h3>
+          <div class="grid">
+            <label>
+              언어
+              <input name="language" type="text" value="en" />
+            </label>
+            <label>
+              단어
+              <input name="term" type="text" required />
+            </label>
+            <label>
+              뜻
+              <input name="meaning" type="text" required />
+            </label>
+            <label>
+              별점 (0-5)
+              <input name="star" type="number" min="0" max="5" value="0" />
+            </label>
+          </div>
+          <label>
+            메모
+            <textarea name="memo" rows="2" placeholder="예문이나 메모"></textarea>
+          </label>
+          <button type="submit">추가</button>
+        </form>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <script src="/static/main.js" defer></script>
+  </body>
+</html>
