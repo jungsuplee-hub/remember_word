@@ -299,12 +299,12 @@ groupSelect.addEventListener('change', () => {
   }
 });
 
-function handlePeekToggle(id, type) {
+function setPeekState(id, type, shouldPeek) {
   const set = type === 'term' ? state.peekTerm : state.peekMeaning;
-  if (set.has(id)) {
-    set.delete(id);
-  } else {
+  if (shouldPeek) {
     set.add(id);
+  } else {
+    set.delete(id);
   }
 }
 
@@ -326,7 +326,7 @@ function updateRowButtons(row) {
   }
 }
 
-tableBody.addEventListener('click', (event) => {
+function handlePointerDown(event) {
   const button = event.target.closest('button');
   if (!button) return;
 
@@ -334,19 +334,34 @@ tableBody.addEventListener('click', (event) => {
   if (!row || !row.dataset.id) return;
 
   const id = Number(row.dataset.id);
+  let peekType = null;
   if (button.classList.contains('preview-term')) {
     if (!state.hideTerm) return;
-    handlePeekToggle(id, 'term');
+    peekType = 'term';
+    setPeekState(id, peekType, true);
     updateRowButtons(row);
+  } else if (button.classList.contains('preview-meaning')) {
+    if (!state.hideMeaning) return;
+    peekType = 'meaning';
+    setPeekState(id, peekType, true);
+    updateRowButtons(row);
+  } else {
     return;
   }
 
-  if (button.classList.contains('preview-meaning')) {
-    if (!state.hideMeaning) return;
-    handlePeekToggle(id, 'meaning');
+  const handleRelease = (ev) => {
+    if (ev.pointerId !== event.pointerId) return;
+    setPeekState(id, peekType, false);
     updateRowButtons(row);
-  }
-});
+    window.removeEventListener('pointerup', handleRelease);
+    window.removeEventListener('pointercancel', handleRelease);
+  };
+
+  window.addEventListener('pointerup', handleRelease);
+  window.addEventListener('pointercancel', handleRelease);
+}
+
+tableBody.addEventListener('pointerdown', handlePointerDown);
 
 toggleTermBtn.addEventListener('click', () => {
   if (!state.words.length) return;
