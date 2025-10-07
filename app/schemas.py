@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 from typing import Optional, List, Literal
 
 
@@ -36,7 +36,7 @@ class GroupUpdate(BaseModel):
 
 class WordCreate(BaseModel):
     group_id: int
-    language: str
+    language: str = Field(default="기본")
     term: str
     meaning: str
     reading: Optional[str] = None
@@ -74,7 +74,9 @@ class WordOut(BaseModel):
 
 
 class QuizStartRequest(BaseModel):
-    group_id: int
+    folder_id: Optional[int] = Field(default=None, description="시험을 볼 폴더")
+    group_id: Optional[int] = Field(default=None, description="기본 그룹 ID (호환성)")
+    group_ids: Optional[List[int]] = Field(default=None, description="시험에 포함할 그룹 ID 목록")
     profile_id: Optional[int] = Field(default=None, description="시험을 치르는 프로필")
     limit: Optional[int] = Field(default=None, gt=0, description="출제할 단어 수")
     random: bool = Field(default=True, description="문항 순서를 랜덤으로 섞을지 여부")
@@ -82,6 +84,45 @@ class QuizStartRequest(BaseModel):
     mode: Literal["study", "exam"] = "exam"
     min_star: Optional[int] = Field(default=None, ge=0, le=5, description="별 최소 점수")
     star_values: Optional[List[int]] = Field(default=None, description="선택한 별 값 목록")
+
+    @root_validator(pre=True)
+    def validate_groups(cls, values):
+        group_id = values.get("group_id")
+        group_ids = values.get("group_ids")
+
+        parsed_ids: List[int] = []
+
+        if group_ids:
+            parsed_ids = []
+            for gid in group_ids:
+                if gid is None or gid == "":
+                    continue
+                try:
+                    parsed_ids.append(int(gid))
+                except (TypeError, ValueError):
+                    raise ValueError("group_ids는 정수여야 합니다.")
+
+        if group_id not in (None, ""):
+            try:
+                gid_int = int(group_id)
+            except (TypeError, ValueError):
+                raise ValueError("group_id는 정수여야 합니다.")
+            parsed_ids.insert(0, gid_int)
+
+        deduped: List[int] = []
+        seen = set()
+        for gid in parsed_ids:
+            if gid in seen:
+                continue
+            seen.add(gid)
+            deduped.append(gid)
+
+        if not deduped:
+            raise ValueError("시험을 시작하려면 최소 하나의 그룹을 선택해야 합니다.")
+
+        values["group_ids"] = deduped
+        values["group_id"] = deduped[0]
+        return values
 
 
 class QuizQuestionOut(BaseModel):

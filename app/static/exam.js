@@ -2,7 +2,7 @@ const state = {
   folders: [],
   groups: [],
   activeFolderId: null,
-  activeGroupId: null,
+  selectedGroupIds: [],
   quiz: {
     active: false,
     completed: false,
@@ -10,14 +10,15 @@ const state = {
     questions: [],
     index: 0,
     progress: null,
-    previewTimer: null,
     awaitingResult: false,
   },
 };
 
 const toast = document.querySelector('#toast');
 const folderSelect = document.querySelector('#exam-folder');
-const groupSelect = document.querySelector('#exam-group');
+const groupsSelect = document.querySelector('#exam-groups');
+const selectAllBtn = document.querySelector('#exam-select-all');
+const clearSelectionBtn = document.querySelector('#exam-clear-selection');
 const subtitle = document.querySelector('#exam-subtitle');
 const form = document.querySelector('#exam-form');
 const content = document.querySelector('#exam-content');
@@ -76,21 +77,54 @@ function renderFolders() {
   });
 }
 
+function updateGroupActionButtons() {
+  const disabled = !state.activeFolderId || state.groups.length === 0;
+  selectAllBtn.disabled = disabled;
+  clearSelectionBtn.disabled = disabled;
+  groupsSelect.disabled = disabled;
+}
+
 function renderGroups() {
-  groupSelect.innerHTML = '<option value="">그룹 선택</option>';
+  groupsSelect.innerHTML = '';
+  if (!state.activeFolderId) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '폴더를 먼저 선택하세요.';
+    option.disabled = true;
+    groupsSelect.appendChild(option);
+    updateGroupActionButtons();
+    return;
+  }
+
+  if (state.groups.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '선택할 그룹이 없습니다.';
+    option.disabled = true;
+    groupsSelect.appendChild(option);
+    updateGroupActionButtons();
+    return;
+  }
+
   state.groups.forEach((group) => {
     const option = document.createElement('option');
     option.value = group.id;
     option.textContent = group.name;
-    if (group.id === state.activeGroupId) option.selected = true;
-    groupSelect.appendChild(option);
+    option.selected = state.selectedGroupIds.includes(group.id);
+    groupsSelect.appendChild(option);
   });
+
+  updateGroupActionButtons();
 }
 
 function updateSubtitle() {
   if (!state.quiz.active) {
     if (!state.quiz.completed) {
-      subtitle.textContent = '폴더와 그룹을 선택한 뒤 시험을 시작하세요.';
+      if (state.activeFolderId && state.selectedGroupIds.length) {
+        subtitle.textContent = `선택한 그룹 ${state.selectedGroupIds.length}개`;
+      } else {
+        subtitle.textContent = '폴더와 그룹을 선택한 뒤 시험을 시작하세요.';
+      }
     } else if (state.quiz.progress) {
       subtitle.textContent = `마지막 시험 결과: ${state.quiz.progress.correct}/${state.quiz.progress.total}`;
     } else {
@@ -107,17 +141,22 @@ function updateSubtitle() {
   subtitle.textContent = `진행 ${progress.answered}/${progress.total} · 정답 ${progress.correct}`;
 }
 
-function clearPreviewTimer() {
-  if (state.quiz.previewTimer) {
-    clearTimeout(state.quiz.previewTimer);
-    state.quiz.previewTimer = null;
-  }
-}
-
 function resetPreview() {
-  clearPreviewTimer();
   answerEl.textContent = '';
   answerEl.classList.add('hidden');
+}
+
+function showAnswerPreview() {
+  if (!state.quiz.active) return;
+  const question = state.quiz.questions[state.quiz.index];
+  if (!question) return;
+  answerEl.textContent = `정답: ${question.answer}`;
+  answerEl.classList.remove('hidden');
+}
+
+function hideAnswerPreview() {
+  answerEl.classList.add('hidden');
+  answerEl.textContent = '';
 }
 
 function resetQuizState() {
@@ -193,13 +232,15 @@ async function fetchFolders() {
     state.folders = data;
     if (!state.folders.find((f) => f.id === state.activeFolderId)) {
       state.activeFolderId = null;
-      state.activeGroupId = null;
       state.groups = [];
-      groupSelect.innerHTML = '<option value="">그룹 선택</option>';
+      state.selectedGroupIds = [];
     }
     renderFolders();
     if (state.activeFolderId) {
       await fetchGroups(state.activeFolderId);
+    } else {
+      renderGroups();
+      updateSubtitle();
     }
   } catch (err) {
     showToast(err.message, 'error');
@@ -209,16 +250,23 @@ async function fetchFolders() {
 async function fetchGroups(folderId) {
   if (!folderId) {
     state.groups = [];
+    state.selectedGroupIds = [];
     renderGroups();
+    updateSubtitle();
     return;
   }
   try {
     const data = await api(`/groups?folder_id=${folderId}`);
     state.groups = data;
-    if (!state.groups.find((g) => g.id === state.activeGroupId)) {
-      state.activeGroupId = null;
+    const availableIds = state.groups.map((g) => g.id);
+    const preservedSelection = state.selectedGroupIds.filter((id) => availableIds.includes(id));
+    if (preservedSelection.length) {
+      state.selectedGroupIds = preservedSelection;
+    } else {
+      state.selectedGroupIds = [...availableIds];
     }
     renderGroups();
+    updateSubtitle();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -226,14 +274,21 @@ async function fetchGroups(folderId) {
 
 async function handleStart(event) {
   event.preventDefault();
-  if (!state.activeGroupId) {
+  if (!state.activeFolderId) {
+    showToast('먼저 폴더를 선택하세요.', 'error');
+    return;
+  }
+  if (!state.selectedGroupIds.length) {
     showToast('시험을 시작할 그룹을 선택하세요.', 'error');
     return;
   }
 
   const formData = new FormData(event.currentTarget);
+  const selectedIds = [...state.selectedGroupIds];
   const payload = {
-    group_id: state.activeGroupId,
+    folder_id: state.activeFolderId,
+    group_id: selectedIds[0],
+    group_ids: selectedIds,
     random: formData.get('random') !== null,
     direction: formData.get('direction') || 'term_to_meaning',
     mode: 'exam',
@@ -273,24 +328,13 @@ async function handleStart(event) {
   }
 }
 
-function previewAnswer() {
-  const question = state.quiz.questions[state.quiz.index];
-  if (!question || !state.quiz.active) return;
-  clearPreviewTimer();
-  answerEl.textContent = `정답: ${question.answer}`;
-  answerEl.classList.remove('hidden');
-  state.quiz.previewTimer = setTimeout(() => {
-    answerEl.classList.add('hidden');
-    state.quiz.previewTimer = null;
-  }, 2000);
-}
-
 async function submitResult(isCorrect) {
   if (!state.quiz.active || state.quiz.awaitingResult) return;
   const question = state.quiz.questions[state.quiz.index];
   if (!question) return;
 
   state.quiz.awaitingResult = true;
+  hideAnswerPreview();
   memorizeFailBtn.disabled = true;
   memorizeSuccessBtn.disabled = true;
   previewBtn.disabled = true;
@@ -369,24 +413,100 @@ function handleReset() {
 function handleFolderChange(event) {
   const folderId = Number(event.target.value) || null;
   state.activeFolderId = folderId;
-  state.activeGroupId = null;
+  state.selectedGroupIds = [];
   fetchGroups(folderId);
 }
 
-function handleGroupChange(event) {
-  const groupId = Number(event.target.value) || null;
-  state.activeGroupId = groupId;
+function handleGroupSelectionChange() {
+  if (!state.groups.length) {
+    state.selectedGroupIds = [];
+  } else {
+    state.selectedGroupIds = Array.from(groupsSelect.selectedOptions).map((option) => Number(option.value));
+  }
+  updateSubtitle();
+}
+
+function handleSelectAllGroups() {
+  if (!state.groups.length) return;
+  state.selectedGroupIds = state.groups.map((group) => group.id);
+  renderGroups();
+  updateSubtitle();
+}
+
+function handleClearGroupSelection() {
+  state.selectedGroupIds = [];
+  renderGroups();
+  updateSubtitle();
+}
+
+function handlePreviewPointerDown(event) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+  event.preventDefault();
+  try {
+    previewBtn.setPointerCapture(event.pointerId);
+  } catch (err) {
+    // ignore if pointer capture is not available
+  }
+  showAnswerPreview();
+}
+
+function handlePreviewPointerUp(event) {
+  if (typeof previewBtn.hasPointerCapture === 'function' && typeof previewBtn.releasePointerCapture === 'function') {
+    const pointerId = event.pointerId;
+    if (pointerId !== undefined && previewBtn.hasPointerCapture(pointerId)) {
+      try {
+        previewBtn.releasePointerCapture(pointerId);
+      } catch (err) {
+        // ignore
+      }
+    }
+  }
+  hideAnswerPreview();
+}
+
+function handlePreviewKeyDown(event) {
+  if (event.key === ' ' || event.key === 'Enter') {
+    event.preventDefault();
+    showAnswerPreview();
+  }
+}
+
+function handlePreviewKeyUp(event) {
+  if (event.key === ' ' || event.key === 'Enter') {
+    event.preventDefault();
+    hideAnswerPreview();
+  }
+}
+
+function updateGroupSelectionUI() {
+  Array.from(groupsSelect.options).forEach((option) => {
+    if (!option.value) {
+      option.selected = false;
+      return;
+    }
+    option.selected = state.selectedGroupIds.includes(Number(option.value));
+  });
 }
 
 function init() {
   form.addEventListener('submit', handleStart);
-  previewBtn.addEventListener('click', previewAnswer);
   memorizeFailBtn.addEventListener('click', () => submitResult(false));
   memorizeSuccessBtn.addEventListener('click', () => submitResult(true));
   retryBtn.addEventListener('click', handleRetry);
   resetBtn.addEventListener('click', handleReset);
   folderSelect.addEventListener('change', handleFolderChange);
-  groupSelect.addEventListener('change', handleGroupChange);
+  groupsSelect.addEventListener('change', () => {
+    handleGroupSelectionChange();
+    updateGroupSelectionUI();
+  });
+  selectAllBtn.addEventListener('click', handleSelectAllGroups);
+  clearSelectionBtn.addEventListener('click', handleClearGroupSelection);
+  previewBtn.addEventListener('pointerdown', handlePreviewPointerDown);
+  previewBtn.addEventListener('pointerup', handlePreviewPointerUp);
+  previewBtn.addEventListener('pointerleave', hideAnswerPreview);
+  previewBtn.addEventListener('pointercancel', handlePreviewPointerUp);
+  previewBtn.addEventListener('keydown', handlePreviewKeyDown);
+  previewBtn.addEventListener('keyup', handlePreviewKeyUp);
   resetQuizState();
   fetchFolders();
   updateSubtitle();

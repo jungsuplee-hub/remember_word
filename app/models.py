@@ -35,7 +35,7 @@ class Word(Base):
     __tablename__ = "words"
     id = Column(Integer, primary_key=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-    language = Column(String, nullable=False)   # ko/ja/zh/en 등
+    language = Column(String, nullable=False, default="기본", server_default="기본")   # ko/ja/zh/en 등
     term = Column(String, nullable=False)
     meaning = Column(Text, nullable=False)
     reading = Column(String)
