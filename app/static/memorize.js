@@ -117,8 +117,9 @@ function notifyMissingVoice(lang) {
   showToast(`${label} 음성을 찾을 수 없어 기본 음성으로 재생됩니다.`, 'info');
 }
 
-function speakTerm(term) {
-  if (!term) return;
+function speakTerm({ term, reading }) {
+  const trimmedTerm = (term || '').trim();
+  if (!trimmedTerm) return;
   if (!speech.supported) {
     if (!speech.warningShown) {
       showToast('이 브라우저에서는 발음을 지원하지 않습니다.', 'error');
@@ -127,8 +128,20 @@ function speakTerm(term) {
     return;
   }
 
-  const utterance = new SpeechSynthesisUtterance(term);
-  const lang = resolveSpeechLanguage(term);
+  const normalizedReading = (reading || '').trim();
+  let speechText = trimmedTerm;
+  let lang = resolveSpeechLanguage(trimmedTerm);
+
+  if (state.audioLanguage === 'zh-CN') {
+    if (normalizedReading) {
+      speechText = normalizedReading;
+      lang = 'ko-KR';
+    } else {
+      lang = 'zh-CN';
+    }
+  }
+
+  const utterance = new SpeechSynthesisUtterance(speechText);
   utterance.lang = lang;
   utterance.rate = 0.9;
 
@@ -136,21 +149,25 @@ function speakTerm(term) {
   if (voice) {
     utterance.voice = voice;
   } else if (state.audioLanguage !== 'auto') {
-    notifyMissingVoice(state.audioLanguage);
+    notifyMissingVoice(lang);
   }
 
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
 
-function createAudioButton(term) {
+function createAudioButton(term, reading) {
   const trimmed = (term || '').trim();
   if (!trimmed) return null;
+  const normalizedReading = (reading || '').trim();
 
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'term-audio';
   button.dataset.term = trimmed;
+  if (normalizedReading) {
+    button.dataset.reading = normalizedReading;
+  }
   updateAudioButtonA11y(button);
   if (!speech.supported) {
     button.disabled = true;
@@ -174,7 +191,7 @@ function createAudioButton(term) {
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    speakTerm(trimmed);
+    speakTerm({ term: trimmed, reading: normalizedReading });
   });
 
   return button;
@@ -278,7 +295,7 @@ function updateSubtitle() {
   subtitle.textContent = `총 ${state.words.length}개의 단어`;
 }
 
-function createCell({ text, hiddenLabel, type }) {
+function createCell({ text, hiddenLabel, type, reading }) {
   const cell = document.createElement('td');
   cell.className = type === 'term' ? 'term-cell' : 'meaning-cell';
   cell.dataset.type = type;
@@ -300,7 +317,7 @@ function createCell({ text, hiddenLabel, type }) {
     const termContent = document.createElement('div');
     termContent.className = 'term-content';
     termContent.appendChild(visibleSpan);
-    const audioButton = createAudioButton(text);
+    const audioButton = createAudioButton(text, reading);
     if (audioButton) {
       termContent.appendChild(audioButton);
     }
@@ -352,6 +369,7 @@ function renderWords() {
       text: word.term,
       hiddenLabel: '단어 가려짐 · 길게 눌러 보기',
       type: 'term',
+      reading: word.reading,
     });
 
     const meaningCell = createCell({
