@@ -130,9 +130,9 @@ function renderWords() {
       <td>${word.meaning}</td>
       <td>
         <div class="star-cell" data-id="${word.id}">
-          <span class="star-value">${word.star}</span>
-          <button class="star-up" title="별점 +1">▲</button>
-          <button class="star-down" title="별점 -1">▼</button>
+          <button class="star-down" title="별점 낮추기" aria-label="별점 낮추기">−</button>
+          <span class="star-value" aria-live="polite">${word.star}</span>
+          <button class="star-up" title="별점 올리기" aria-label="별점 올리기">＋</button>
         </div>
       </td>
       <td class="word-actions">
