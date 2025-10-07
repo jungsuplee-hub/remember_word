@@ -1,3 +1,5 @@
+const MAX_STAR_RATING = 10;
+
 const state = {
   folders: [],
   groups: [],
@@ -291,7 +293,7 @@ async function handleWordSubmit(event) {
 async function changeStar(wordId, delta) {
   const word = state.words.find((w) => w.id === wordId);
   if (!word) return;
-  const next = Math.min(5, Math.max(0, word.star + delta));
+  const next = Math.min(MAX_STAR_RATING, Math.max(0, word.star + delta));
   if (next === word.star) return;
   try {
     const updated = await api(`/words/${wordId}`, {

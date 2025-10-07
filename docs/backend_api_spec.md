@@ -24,7 +24,7 @@
   - id (UUID)
   - group_id (FK -> Group)
   - term, reading, part_of_speech, meaning, example_sentence
-  - rating (0~5), tags (array of strings)
+  - rating (0~10), tags (array of strings)
   - metadata (JSON: source, difficulty 등)
   - created_at, updated_at
 - **QuizSession**

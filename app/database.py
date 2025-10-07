@@ -36,6 +36,20 @@ def ensure_schema() -> None:
                 text("ALTER TABLE words ADD COLUMN star INTEGER NOT NULL DEFAULT 0")
             )
 
+        try:
+            quiz_session_columns = {
+                column["name"] for column in inspector.get_columns("quiz_sessions")
+            }
+        except NoSuchTableError:
+            quiz_session_columns = set()
+
+        if "is_retry" not in quiz_session_columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE quiz_sessions ADD COLUMN is_retry BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )
+
 
 def get_db():
     db = SessionLocal()

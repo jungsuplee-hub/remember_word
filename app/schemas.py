@@ -2,6 +2,9 @@ from pydantic import BaseModel, Field, root_validator
 from typing import Optional, List, Literal
 
 
+MAX_STAR_RATING = 10
+
+
 class ProfileCreate(BaseModel):
     name: str = Field(..., description="표시할 이름")
     email: Optional[str] = Field(default=None, description="로그인을 위한 이메일")
@@ -43,7 +46,7 @@ class WordCreate(BaseModel):
     pos: Optional[str] = None
     example: Optional[str] = None
     memo: Optional[str] = None
-    star: Optional[int] = Field(default=0, ge=0, le=5)
+    star: Optional[int] = Field(default=0, ge=0, le=MAX_STAR_RATING)
 
 
 class WordUpdate(BaseModel):
@@ -55,7 +58,7 @@ class WordUpdate(BaseModel):
     pos: Optional[str] = None
     example: Optional[str] = None
     memo: Optional[str] = None
-    star: Optional[int] = Field(default=None, ge=0, le=5)
+    star: Optional[int] = Field(default=None, ge=0, le=MAX_STAR_RATING)
 
 class WordOut(BaseModel):
     id: int
@@ -82,7 +85,7 @@ class QuizStartRequest(BaseModel):
     random: bool = Field(default=True, description="문항 순서를 랜덤으로 섞을지 여부")
     direction: Literal["term_to_meaning", "meaning_to_term"] = "term_to_meaning"
     mode: Literal["study", "exam"] = "exam"
-    min_star: Optional[int] = Field(default=None, ge=0, le=5, description="별 최소 점수")
+    min_star: Optional[int] = Field(default=None, ge=0, le=MAX_STAR_RATING, description="별 최소 점수")
     star_values: Optional[List[int]] = Field(default=None, description="선택한 별 값 목록")
 
     @root_validator(pre=True)
