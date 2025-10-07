@@ -17,7 +17,7 @@
       </div>
     </header>
 
-    <main>
+    <main class="exam-layout">
       <section class="panel">
         <div class="panel-header">
           <h2>시험 설정</h2>
@@ -25,25 +25,17 @@
         </div>
 
         <form id="exam-form" class="form">
-          <div class="grid">
-            <label>
+          <div class="grid settings-grid">
+            <label class="full-span">
               폴더
               <select id="exam-folder" required>
                 <option value="">폴더 선택</option>
               </select>
             </label>
             <label>
-              그룹
-              <select id="exam-group" name="group" required>
-                <option value="">그룹 선택</option>
-              </select>
-            </label>
-            <label>
               출제 수
               <input name="limit" type="number" min="1" placeholder="전체" />
             </label>
-          </div>
-          <div class="grid">
             <label>
               출제 방향
               <select name="direction">
@@ -59,14 +51,25 @@
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
             </label>
             <label class="inline">
               <input type="checkbox" name="random" checked />
               순서 섞기
             </label>
+          </div>
+          <div class="group-select-block">
+            <div class="group-select-header">
+              <label for="exam-groups">시험 그룹</label>
+              <div class="group-select-actions">
+                <button type="button" id="exam-select-all" class="secondary">전체 선택</button>
+                <button type="button" id="exam-clear-selection" class="secondary">선택 해제</button>
+              </div>
+            </div>
+            <select id="exam-groups" multiple size="6" aria-describedby="exam-group-help"></select>
+            <p id="exam-group-help" class="form-description">같은 폴더 안의 여러 그룹을 선택해 시험을 볼 수 있습니다.</p>
           </div>
           <button type="submit">시험 시작</button>
         </form>

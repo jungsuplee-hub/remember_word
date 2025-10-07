@@ -114,11 +114,11 @@ function renderGroups() {
 function renderWords() {
   wordTable.innerHTML = '';
   if (!state.activeGroupId) {
-    wordTable.innerHTML = '<tr><td colspan="5">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
+    wordTable.innerHTML = '<tr><td colspan="4">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
     return;
   }
   if (state.words.length === 0) {
-    wordTable.innerHTML = '<tr><td colspan="5">등록된 단어가 없습니다.</td></tr>';
+    wordTable.innerHTML = '<tr><td colspan="4">등록된 단어가 없습니다.</td></tr>';
     return;
   }
 
@@ -126,7 +126,6 @@ function renderWords() {
     const tr = document.createElement('tr');
     tr.dataset.id = word.id;
     tr.innerHTML = `
-      <td>${word.language}</td>
       <td>${word.term}</td>
       <td>${word.meaning}</td>
       <td>
@@ -265,7 +264,7 @@ async function handleWordSubmit(event) {
   const formData = new FormData(form);
   const payload = {
     group_id: state.activeGroupId,
-    language: formData.get('language') || 'en',
+    language: '기본',
     term: formData.get('term').trim(),
     meaning: formData.get('meaning').trim(),
     memo: formData.get('memo').trim() || null,
@@ -281,7 +280,6 @@ async function handleWordSubmit(event) {
       body: JSON.stringify(payload),
     });
     form.reset();
-    form.elements.language.value = 'en';
     form.elements.star.value = '0';
     showToast('단어가 추가되었습니다.');
     await fetchWords();
@@ -545,7 +543,7 @@ async function handleStructuredImport(event) {
 
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('default_language', importLanguageInput.value || 'en');
+  formData.append('default_language', importLanguageInput.value || '기본');
 
   try {
     const res = await fetch('/words/import-structured', {

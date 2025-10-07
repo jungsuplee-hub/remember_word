@@ -58,13 +58,28 @@ main {
   display: grid;
   gap: 1.5rem;
   padding: 1.5rem;
-  grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr);
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
   grid-template-areas:
     "folders words"
     "groups words";
   grid-auto-rows: minmax(280px, 1fr);
   align-items: stretch;
   min-height: calc(100vh - 6rem);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+main.exam-layout {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1.5rem 3rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+main.exam-layout .panel {
+  width: min(100%, 760px);
 }
 
 #folders {
@@ -303,10 +318,59 @@ tbody tr:hover {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
+.settings-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.settings-grid .full-span {
+  grid-column: 1 / -1;
+}
+
 .word-controls {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+}
+
+.group-select-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.5rem;
+}
+
+.group-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.group-select-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+#exam-groups {
+  min-height: 9rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+}
+
+#exam-groups:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+.group-select-block .form-description {
+  margin: 0;
+  color: #475569;
 }
 
 .inline {
@@ -480,12 +544,26 @@ tbody tr:hover {
     grid-template-areas: none;
     grid-auto-rows: auto;
     min-height: auto;
+    max-width: none;
   }
 
   #folders,
   #groups,
   #words {
     grid-area: auto;
+  }
+
+  main.exam-layout {
+    padding: 2rem 1rem 2.5rem;
+  }
+
+  main.exam-layout .panel {
+    width: 100%;
+  }
+
+  .group-select-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   header {

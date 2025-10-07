@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
@@ -37,11 +37,29 @@ def _quiz_progress(session: models.QuizSession, db: Session) -> schemas.QuizProg
 
 @router.post("/start", response_model=schemas.QuizStartResponse)
 def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db)):
-    group = db.query(models.Group).filter(models.Group.id == payload.group_id).one_or_none()
-    if not group:
-        raise HTTPException(404, "그룹을 찾을 수 없습니다.")
+    group_ids = payload.group_ids or []
+    if not group_ids:
+        raise HTTPException(400, "시험을 시작할 그룹을 선택하세요.")
 
-    query = db.query(models.Word).filter(models.Word.group_id == payload.group_id)
+    groups = (
+        db.query(models.Group)
+        .filter(models.Group.id.in_(group_ids))
+        .all()
+    )
+    if len(groups) != len(group_ids):
+        existing_ids = {g.id for g in groups}
+        missing = sorted({gid for gid in group_ids if gid not in existing_ids})
+        raise HTTPException(404, f"선택한 그룹을 찾을 수 없습니다: {missing}")
+
+    folder_ids = {g.folder_id for g in groups}
+    if len(folder_ids) > 1:
+        raise HTTPException(400, "같은 폴더의 그룹만 선택할 수 있습니다.")
+    if payload.folder_id and folder_ids and payload.folder_id not in folder_ids:
+        raise HTTPException(400, "선택한 폴더에 그룹이 속해있지 않습니다.")
+
+    primary_group_id = payload.group_id or group_ids[0]
+
+    query = db.query(models.Word).filter(models.Word.group_id.in_(group_ids))
     if payload.min_star is not None:
         query = query.filter(models.Word.star >= payload.min_star)
     if payload.star_values:
@@ -50,7 +68,11 @@ def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db))
     if payload.random:
         query = query.order_by(func.random())
     else:
-        query = query.order_by(models.Word.term)
+        group_order = case(
+            value=models.Word.group_id,
+            whens={gid: idx for idx, gid in enumerate(group_ids)},
+        )
+        query = query.order_by(group_order, models.Word.term)
 
     if payload.limit:
         query = query.limit(payload.limit)
@@ -61,7 +83,7 @@ def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db))
 
     session = models.QuizSession(
         profile_id=payload.profile_id,
-        group_id=payload.group_id,
+        group_id=primary_group_id,
         direction=payload.direction,
         mode=payload.mode,
         randomize=payload.random,

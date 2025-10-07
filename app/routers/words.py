@@ -146,7 +146,7 @@ async def import_words(
 @router.post("/import-structured", response_model=schemas.WordImportStructuredSummary)
 async def import_with_structure(
     file: UploadFile = File(...),
-    default_language: str = Form("en"),
+    default_language: str = Form("기본"),
     db: Session = Depends(get_db),
 ):
     if not file.filename:

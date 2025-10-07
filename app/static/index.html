@@ -80,7 +80,6 @@
           <table>
             <thead>
               <tr>
-                <th>언어</th>
                 <th>단어</th>
                 <th>뜻</th>
                 <th>별</th>
@@ -96,10 +95,6 @@
           <form id="word-form" class="form">
             <h3>단어 추가</h3>
             <div class="grid">
-              <label>
-                언어
-                <input name="language" type="text" value="en" />
-              </label>
               <label>
                 단어
                 <input name="term" type="text" required />
@@ -128,7 +123,7 @@
             <p class="form-description">엑셀 파일에 폴더, 그룹, 단어, 뜻 열을 포함하여 업로드하세요.</p>
             <label>
               기본 언어 (선택)
-              <input id="import-language" type="text" value="en" />
+              <input id="import-language" type="text" placeholder="예: 영어" />
             </label>
             <label>
               파일 선택
