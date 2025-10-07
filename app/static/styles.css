@@ -69,8 +69,8 @@ main {
   grid-template-areas:
     "folders words"
     "groups words";
-  grid-auto-rows: minmax(280px, 1fr);
-  align-items: stretch;
+  grid-template-rows: auto 1fr;
+  align-items: start;
   min-height: calc(100vh - 6rem);
   max-width: 1200px;
   margin: 0 auto;
@@ -276,6 +276,7 @@ main.memorize-layout .panel {
 #words {
   grid-area: words;
   min-height: 100%;
+  align-self: stretch;
 }
 
 .panel {
