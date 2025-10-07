@@ -8,8 +8,13 @@
   </head>
   <body>
     <header>
-      <h1>Remember Word</h1>
-      <p>폴더와 그룹을 만들고 단어를 추가해보세요.</p>
+      <div class="header-content">
+        <div>
+          <h1>Remember Word</h1>
+          <p>폴더와 그룹을 만들고 단어를 추가해보세요.</p>
+        </div>
+        <a href="/static/exam.html" class="link-button">시험 보러 가기</a>
+      </div>
     </header>
 
     <main>
@@ -73,6 +78,7 @@
                 <th>단어</th>
                 <th>뜻</th>
                 <th>별</th>
+                <th>관리</th>
               </tr>
             </thead>
             <tbody id="word-table"></tbody>
@@ -105,75 +111,20 @@
           </label>
           <button type="submit">추가</button>
         </form>
-      </section>
 
-      <section id="quiz" class="panel">
-        <div class="panel-header">
-          <h2>시험</h2>
-          <span class="panel-subtitle" id="quiz-subtitle">그룹을 선택하면 시험을 시작할 수 있습니다.</span>
-        </div>
-
-        <form id="quiz-form" class="form">
-          <h3>시험 설정</h3>
-          <div class="grid">
-            <label>
-              출제 수
-              <input name="limit" type="number" min="1" placeholder="전체" />
-            </label>
-            <label>
-              출제 방향
-              <select name="direction">
-                <option value="term_to_meaning">단어 → 뜻</option>
-                <option value="meaning_to_term">뜻 → 단어</option>
-              </select>
-            </label>
-            <label>
-              최소 별점
-              <select name="min_star">
-                <option value="">전체</option>
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
-            </label>
-          </div>
-          <label class="inline">
-            <input type="checkbox" name="random" checked />
-            순서 섞기
+        <form id="import-form" class="form">
+          <h3>엑셀로 단어 가져오기</h3>
+          <p class="form-description">엑셀 파일에 폴더, 그룹, 단어, 뜻 열을 포함하여 업로드하세요.</p>
+          <label>
+            기본 언어 (선택)
+            <input id="import-language" type="text" value="en" />
           </label>
-          <button type="submit">시험 시작</button>
+          <label>
+            파일 선택
+            <input id="import-file" name="file" type="file" accept=".xlsx,.xls,.csv" required />
+          </label>
+          <button type="submit">업로드</button>
         </form>
-
-        <div id="quiz-content" class="quiz-content hidden">
-          <div id="quiz-progress" class="quiz-progress"></div>
-          <div id="quiz-question" class="quiz-question">
-            <h3 id="quiz-prompt"></h3>
-            <p id="quiz-reading" class="quiz-reading"></p>
-            <label>
-              답안
-              <input type="text" id="quiz-answer" autocomplete="off" />
-            </label>
-            <div class="quiz-actions">
-              <button type="button" id="quiz-submit">채점</button>
-              <button type="button" id="quiz-show-answer" class="secondary">정답 보기</button>
-              <button type="button" id="quiz-next" class="secondary">다음 문제</button>
-            </div>
-            <p id="quiz-feedback" class="quiz-feedback"></p>
-            <div id="quiz-correct-answer" class="quiz-correct hidden"></div>
-          </div>
-
-          <div id="quiz-summary" class="quiz-summary hidden">
-            <h3>시험 결과</h3>
-            <p id="quiz-summary-text"></p>
-            <div class="quiz-summary-actions">
-              <button type="button" id="quiz-retry" class="secondary">틀린 문제 다시 풀기</button>
-              <button type="button" id="quiz-reset">새 시험 준비</button>
-            </div>
-          </div>
-        </div>
       </section>
     </main>
 

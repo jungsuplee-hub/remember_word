@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
@@ -18,3 +18,17 @@ def list_groups(folder_id: int | None = None, db: Session = Depends(get_db)):
         q = q.filter(models.Group.folder_id == folder_id)
     rows = q.all()
     return [{"id": r.id, "folder_id": r.folder_id, "name": r.name} for r in rows]
+
+
+@router.patch("/{group_id}", response_model=dict)
+def update_group(group_id: int, payload: schemas.GroupUpdate, db: Session = Depends(get_db)):
+    group = db.query(models.Group).filter(models.Group.id == group_id).one_or_none()
+    if not group:
+        raise HTTPException(404, "그룹을 찾을 수 없습니다.")
+
+    data = payload.model_dump(exclude_unset=True)
+    if "name" in data and data["name"]:
+        group.name = data["name"]
+
+    db.commit()
+    return {"id": group.id, "folder_id": group.folder_id, "name": group.name}
