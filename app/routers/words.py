@@ -138,19 +138,120 @@ async def import_with_structure(
 
     content = await file.read()
     name = (file.filename or "").lower()
-    try:
-        if name.endswith(".xlsx") or name.endswith(".xls"):
-            df = pd.read_excel(BytesIO(content))
-        else:
-            df = pd.read_csv(StringIO(content.decode("utf-8")))
-    except Exception as exc:
-        raise HTTPException(400, f"파일을 읽을 수 없습니다: {exc}")
+    def read_table(*, header: int | None = 0):
+        try:
+            if name.endswith(".xlsx") or name.endswith(".xls"):
+                return pd.read_excel(BytesIO(content), header=header)
+            return pd.read_csv(StringIO(content.decode("utf-8")), header=header)
+        except Exception as exc:  # pragma: no cover - 사용자 입력 오류 처리
+            raise HTTPException(400, f"파일을 읽을 수 없습니다: {exc}")
 
-    df.columns = [str(c).strip().lower() for c in df.columns]
-    required = {"folder", "group", "term", "meaning"}
-    missing = required - set(df.columns)
-    if missing:
-        raise HTTPException(400, f"필수 컬럼 누락: {', '.join(sorted(missing))}")
+    def canonicalize(value: str | int | float | None) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float) and math.isnan(value):
+            return ""
+        return str(value).strip().lower()
+
+    alias_map = {
+        "folder": {"folder", "폴더", "폴더명", "카테고리", "folder name", "folder명"},
+        "group": {
+            "group",
+            "그룹",
+            "그룹명",
+            "day",
+            "day1",
+            "day2",
+            "day3",
+            "단계",
+            "세트",
+            "unit",
+            "lesson",
+        },
+        "term": {
+            "term",
+            "word",
+            "단어",
+            "표제어",
+            "영단어",
+            "단어(영어)",
+            "단어(외국어)",
+        },
+        "meaning": {
+            "meaning",
+            "뜻",
+            "의미",
+            "해석",
+            "뜻(한국어)",
+            "뜻풀이",
+            "translation",
+        },
+    }
+
+    def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+        normalized: list[str] = []
+        for col in df.columns:
+            key = canonicalize(col)
+            replaced = None
+            for target, aliases in alias_map.items():
+                if key == target or key in aliases:
+                    replaced = target
+                    break
+            normalized.append(replaced or key)
+        df.columns = normalized
+        return df
+
+    def try_parse_dataframe() -> pd.DataFrame:
+        df_initial = normalize_columns(read_table())
+        required = {"folder", "group", "term", "meaning"}
+        missing = required - set(df_initial.columns)
+        if not missing:
+            return df_initial
+
+        # 헤더가 없거나 첫 줄이 데이터인 경우 다시 시도합니다.
+        df_no_header = read_table(header=None)
+        if df_no_header is None or df_no_header.empty:
+            raise HTTPException(400, f"필수 컬럼 누락: {', '.join(sorted(missing))}")
+
+        first_row = [canonicalize(v) for v in df_no_header.iloc[0].tolist()]
+        header_map: dict[int, str] = {}
+        for idx, value in enumerate(first_row):
+            for target, aliases in alias_map.items():
+                if value == target or value in aliases:
+                    header_map[idx] = target
+                    break
+
+        df_candidate = df_no_header.copy()
+        drop_first_row = False
+        if header_map:
+            recognized = set(header_map.values())
+            if required.issubset(recognized):
+                drop_first_row = True
+            else:
+                header_map = {}
+
+        if not header_map and len(df_candidate.columns) >= 4:
+            header_map = {
+                df_candidate.columns[0]: "folder",
+                df_candidate.columns[1]: "group",
+                df_candidate.columns[2]: "term",
+                df_candidate.columns[3]: "meaning",
+            }
+
+        if header_map:
+            df_candidate = df_candidate.rename(columns=header_map)
+        df_candidate = normalize_columns(df_candidate)
+
+        if drop_first_row:
+            df_candidate = df_candidate.iloc[1:]
+
+        required_missing = required - set(df_candidate.columns)
+        if required_missing:
+            raise HTTPException(400, f"필수 컬럼 누락: {', '.join(sorted(required_missing))}")
+
+        return df_candidate.reset_index(drop=True)
+
+    df = try_parse_dataframe()
 
     folders = db.query(models.Folder).all()
     folder_cache: dict[str, models.Folder] = {
