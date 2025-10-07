@@ -124,7 +124,7 @@ main.memorize-layout .panel {
 .memorize-toggle-row {
   padding: 0.25rem 1.25rem 1rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -132,6 +132,7 @@ main.memorize-layout .panel {
 
 .audio-language-control {
   margin: 0;
+  margin-right: auto;
   border: 1px solid rgba(59, 130, 246, 0.35);
   background: rgba(59, 130, 246, 0.08);
   border-radius: 999px;
@@ -141,6 +142,7 @@ main.memorize-layout .panel {
   padding: 0.45rem 0.85rem;
   min-height: 2.25rem;
   flex-wrap: wrap;
+  order: -1;
 }
 
 .audio-language-control legend {
@@ -856,7 +858,7 @@ tbody tr:hover {
   }
 
   .memorize-toggle-row {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .memorize-toggle-group {
