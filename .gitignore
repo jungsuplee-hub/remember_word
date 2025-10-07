@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+*.sqlite3
+
+# Docker / DB
+data/
+postgres-data/
+redis-data/
+
+# Virtual environments
+venv/
+.env/
+*.egg-info/
+
+# Logs
+*.log
+
+# Cache
+__pycache__/
+.cache/

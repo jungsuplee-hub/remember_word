@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: remember_word_web
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./app:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+
+  db:
+    image: postgres:15
+    container_name: remember_word_db
+    restart: always
+    environment:
+      POSTGRES_USER: remember_user
+      POSTGRES_PASSWORD: remember_pass
+      POSTGRES_DB: remember_word
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: remember_word_cache
+    restart: always
+
