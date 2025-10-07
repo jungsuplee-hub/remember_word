@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remember Word - 암기</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div>
+          <h1>단어 암기하기</h1>
+          <p>폴더와 그룹을 선택해 전체 단어 목록을 살펴보세요.</p>
+        </div>
+        <div class="header-actions">
+          <a href="/static/index.html" class="link-button">단어 관리</a>
+          <a href="/static/exam.html" class="link-button">시험 보기</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="memorize-layout">
+      <section class="panel memorize-panel">
+        <div class="panel-header memorize-panel-header">
+          <div class="memorize-heading">
+            <h2>암기 리스트</h2>
+            <p class="panel-subtitle" id="memorize-subtitle">폴더와 그룹을 선택하세요.</p>
+          </div>
+          <div class="memorize-toggle-group">
+            <button id="toggle-term" class="secondary" type="button" disabled>단어 가리기</button>
+            <button id="toggle-meaning" class="secondary" type="button" disabled>뜻 가리기</button>
+          </div>
+        </div>
+
+        <div class="form memorize-selectors">
+          <div class="grid memorize-grid">
+            <label>
+              폴더
+              <select id="memorize-folder">
+                <option value="">폴더 선택</option>
+              </select>
+            </label>
+            <label>
+              그룹
+              <select id="memorize-group" disabled>
+                <option value="">그룹 선택</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div id="memorize-table-container" class="table-wrapper memorize-table">
+          <table>
+            <thead>
+              <tr>
+                <th>단어</th>
+                <th>뜻</th>
+              </tr>
+            </thead>
+            <tbody id="memorize-word-table">
+              <tr>
+                <td colspan="2" class="empty">폴더와 그룹을 선택하면 단어가 표시됩니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <script src="/static/memorize.js" defer></script>
+  </body>
+</html>
