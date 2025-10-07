@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
+from utils.sorting import korean_alnum_sort_key
 
 router = APIRouter()
 
@@ -17,6 +18,7 @@ def list_groups(folder_id: int | None = None, db: Session = Depends(get_db)):
     if folder_id:
         q = q.filter(models.Group.folder_id == folder_id)
     rows = q.all()
+    rows.sort(key=lambda r: korean_alnum_sort_key(r.name or ""))
     return [{"id": r.id, "folder_id": r.folder_id, "name": r.name} for r in rows]
 
 

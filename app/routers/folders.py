@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
+from utils.sorting import korean_alnum_sort_key
 
 router = APIRouter()
 
@@ -14,6 +15,7 @@ def create_folder(payload: schemas.FolderCreate, db: Session = Depends(get_db)):
 @router.get("", response_model=list[dict])
 def list_folders(db: Session = Depends(get_db)):
     rows = db.query(models.Folder).all()
+    rows.sort(key=lambda r: korean_alnum_sort_key(r.name or ""))
     return [{"id": r.id, "name": r.name, "parent_id": r.parent_id} for r in rows]
 
 

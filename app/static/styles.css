@@ -665,6 +665,13 @@ tbody tr:hover {
   gap: 0.5rem;
 }
 
+.quiz-actions button {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
 .quiz-feedback {
   min-height: 1.2rem;
   font-weight: 600;
