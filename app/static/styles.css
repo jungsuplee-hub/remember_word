@@ -58,7 +58,26 @@ main {
   display: grid;
   gap: 1.5rem;
   padding: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr);
+  grid-template-areas:
+    "folders words"
+    "groups words";
+  grid-auto-rows: minmax(280px, 1fr);
+  align-items: stretch;
+  min-height: calc(100vh - 6rem);
+}
+
+#folders {
+  grid-area: folders;
+}
+
+#groups {
+  grid-area: groups;
+}
+
+#words {
+  grid-area: words;
+  min-height: 100%;
 }
 
 .panel {
@@ -69,6 +88,16 @@ main {
   flex-direction: column;
   overflow: hidden;
   min-height: 320px;
+}
+
+.panel > .list {
+  padding: 0.5rem 0;
+}
+
+.panel > .list,
+.panel > .table-wrapper {
+  flex: 1;
+  min-height: 0;
 }
 
 .panel-header {
@@ -233,6 +262,8 @@ button:hover:not(:disabled) {
 .table-wrapper {
   overflow: auto;
   padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
 }
 
 table {
@@ -249,11 +280,17 @@ thead th {
   padding: 0.6rem;
   text-align: left;
   color: #1f2937;
+  position: sticky;
+  top: 0;
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(4px);
+  z-index: 1;
 }
 
 tbody td {
   padding: 0.55rem 0.6rem;
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  vertical-align: top;
 }
 
 tbody tr:hover {
@@ -285,6 +322,56 @@ tbody tr:hover {
 
 .hidden {
   display: none !important;
+}
+
+.form-details {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.75);
+}
+
+.form-details + .form-details {
+  border-top: none;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.form-details summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #1f2937;
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.form-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.form-details summary::after {
+  content: '열기';
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.form-details[open] summary {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.form-details[open] summary::after {
+  content: '닫기';
+  color: #2563eb;
+}
+
+.form-details .form {
+  border-top: 1px solid rgba(37, 99, 235, 0.15);
+  padding-top: 1.25rem;
+}
+
+.form-details[open] + .form-details {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .quiz-content {
@@ -388,6 +475,19 @@ tbody tr:hover {
 }
 
 @media (max-width: 768px) {
+  main {
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+    grid-auto-rows: auto;
+    min-height: auto;
+  }
+
+  #folders,
+  #groups,
+  #words {
+    grid-area: auto;
+  }
+
   header {
     text-align: center;
   }
