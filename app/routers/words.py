@@ -281,8 +281,12 @@ async def import_with_structure(
     folders_created = 0
     groups_created = 0
 
-    def normalize(value: str | None) -> str:
-        return (value or "").strip()
+    def normalize(value: str | int | float | bool | None) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float) and math.isnan(value):
+            return ""
+        return str(value).strip()
 
     for row in df.to_dict(orient="records"):
         folder_name = normalize(row.get("folder"))
