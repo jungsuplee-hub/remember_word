@@ -77,6 +77,7 @@ function speakTerm(term) {
   const utterance = new SpeechSynthesisUtterance(term);
   const lang = detectLanguageFromTerm(term);
   utterance.lang = lang;
+  utterance.rate = 0.9;
 
   const voice = selectVoiceForLang(lang);
   if (voice) {

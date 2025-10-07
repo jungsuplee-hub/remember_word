@@ -117,11 +117,24 @@ function renderGroups() {
   updateGroupActionButtons();
 }
 
+function getSelectedGroupNames() {
+  if (!state.selectedGroupIds.length) return [];
+  const nameById = new Map(state.groups.map((group) => [group.id, group.name]));
+  return state.selectedGroupIds
+    .map((id) => nameById.get(id))
+    .filter((name) => typeof name === 'string' && name.trim().length);
+}
+
 function updateSubtitle() {
   if (!state.quiz.active) {
     if (!state.quiz.completed) {
       if (state.activeFolderId && state.selectedGroupIds.length) {
-        subtitle.textContent = `선택한 그룹 ${state.selectedGroupIds.length}개`;
+        const selectedNames = getSelectedGroupNames();
+        if (selectedNames.length) {
+          subtitle.textContent = `선택한 그룹: ${selectedNames.join(', ')}`;
+        } else {
+          subtitle.textContent = '선택한 그룹 정보를 불러오지 못했습니다.';
+        }
       } else {
         subtitle.textContent = '폴더와 그룹을 선택한 뒤 시험을 시작하세요.';
       }
@@ -263,7 +276,7 @@ async function fetchGroups(folderId) {
     if (preservedSelection.length) {
       state.selectedGroupIds = preservedSelection;
     } else {
-      state.selectedGroupIds = [...availableIds];
+      state.selectedGroupIds = [];
     }
     renderGroups();
     updateSubtitle();
