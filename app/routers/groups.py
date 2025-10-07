@@ -29,6 +29,22 @@ def update_group(group_id: int, payload: schemas.GroupUpdate, db: Session = Depe
     data = payload.model_dump(exclude_unset=True)
     if "name" in data and data["name"]:
         group.name = data["name"]
+    if "folder_id" in data and data["folder_id"] is not None:
+        folder = db.query(models.Folder).filter(models.Folder.id == data["folder_id"]).one_or_none()
+        if not folder:
+            raise HTTPException(404, "이동할 폴더를 찾을 수 없습니다.")
+        group.folder_id = data["folder_id"]
 
     db.commit()
     return {"id": group.id, "folder_id": group.folder_id, "name": group.name}
+
+
+@router.delete("/{group_id}", response_model=dict)
+def delete_group(group_id: int, db: Session = Depends(get_db)):
+    group = db.query(models.Group).filter(models.Group.id == group_id).one_or_none()
+    if not group:
+        raise HTTPException(404, "그룹을 찾을 수 없습니다.")
+
+    db.delete(group)
+    db.commit()
+    return {"status": "deleted", "id": group_id}
