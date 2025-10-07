@@ -11,12 +11,16 @@ STATIC_DIR = BASE_DIR / "static"
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from database import ensure_schema
 from routers import folders, groups, words, profiles, quizzes
 
 app = FastAPI(title="Remember Word", version="1.0")
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+ensure_schema()
 
 
 @app.get("/", response_class=FileResponse)
