@@ -19,6 +19,111 @@ const tableContainer = document.querySelector('#memorize-table-container');
 const toggleTermBtn = document.querySelector('#toggle-term');
 const toggleMeaningBtn = document.querySelector('#toggle-meaning');
 
+const speech = {
+  supported:
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    'SpeechSynthesisUtterance' in window,
+  voices: [],
+  warningShown: false,
+};
+
+function loadVoices() {
+  if (!speech.supported) return;
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length) {
+    speech.voices = voices;
+  }
+}
+
+if (speech.supported) {
+  loadVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+}
+
+function detectLanguageFromTerm(term) {
+  const text = (term || '').trim();
+  if (!text) return 'ko-KR';
+  if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(text)) return 'ko-KR';
+  if (/[一-鿿]/.test(text)) return 'zh-CN';
+  if (/[A-Za-z]/.test(text)) return 'en-US';
+  return 'ko-KR';
+}
+
+function selectVoiceForLang(lang) {
+  if (!speech.supported) return null;
+  if (!speech.voices.length) {
+    loadVoices();
+  }
+  if (!speech.voices.length) return null;
+
+  const exact = speech.voices.find((voice) => voice.lang === lang);
+  if (exact) return exact;
+
+  const base = lang.split('-')[0];
+  return speech.voices.find((voice) => voice.lang && voice.lang.startsWith(base));
+}
+
+function speakTerm(term) {
+  if (!term) return;
+  if (!speech.supported) {
+    if (!speech.warningShown) {
+      showToast('이 브라우저에서는 발음을 지원하지 않습니다.', 'error');
+      speech.warningShown = true;
+    }
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(term);
+  const lang = detectLanguageFromTerm(term);
+  utterance.lang = lang;
+
+  const voice = selectVoiceForLang(lang);
+  if (voice) {
+    utterance.voice = voice;
+  }
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+function createAudioButton(term) {
+  const trimmed = (term || '').trim();
+  if (!trimmed) return null;
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'term-audio';
+  button.setAttribute('aria-label', `${trimmed} 발음 듣기`);
+  button.title = '발음 듣기';
+  if (!speech.supported) {
+    button.disabled = true;
+    button.setAttribute('aria-disabled', 'true');
+  } else {
+    button.setAttribute('aria-disabled', 'false');
+  }
+
+  button.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5.5 15h-2A1.5 1.5 0 0 1 2 13.5v-3A1.5 1.5 0 0 1 3.5 9h2L10 5.5a1 1 0 0 1 1.64.77v10.46A1 1 0 0 1 10 17.5zM15.46 8.54a1 1 0 1 1 1.41-1.41 6 6 0 0 1 0 8.49 1 1 0 1 1-1.41-1.41 4 4 0 0 0 0-5.67m2.83-2.83a1 1 0 0 1 1.41 0 9 9 0 0 1 0 12.73 1 1 0 1 1-1.41-1.41 7 7 0 0 0 0-9.9 1 1 0 0 1 0-1.42" />
+    </svg>
+  `;
+
+  const stopPropagation = (event) => event.stopPropagation();
+  button.addEventListener('pointerdown', stopPropagation);
+  button.addEventListener('pointerup', stopPropagation);
+  button.addEventListener('pointercancel', stopPropagation);
+  button.addEventListener('keydown', stopPropagation);
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    speakTerm(trimmed);
+  });
+
+  return button;
+}
+
 function showToast(message, type = 'info') {
   toast.textContent = message;
   toast.dataset.type = type;
@@ -135,7 +240,18 @@ function createCell({ text, hiddenLabel, type }) {
   hiddenSpan.className = 'value-hidden';
   hiddenSpan.textContent = hiddenLabel;
 
-  cell.appendChild(visibleSpan);
+  if (type === 'term') {
+    const termContent = document.createElement('div');
+    termContent.className = 'term-content';
+    termContent.appendChild(visibleSpan);
+    const audioButton = createAudioButton(text);
+    if (audioButton) {
+      termContent.appendChild(audioButton);
+    }
+    cell.appendChild(termContent);
+  } else {
+    cell.appendChild(visibleSpan);
+  }
   cell.appendChild(hiddenSpan);
   return cell;
 }

@@ -156,6 +156,46 @@ main.memorize-layout .panel {
   touch-action: manipulation;
 }
 
+.term-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.term-audio {
+  border: none;
+  background: transparent;
+  padding: 0.15rem;
+  border-radius: 999px;
+  color: #1d4ed8;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.term-audio svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+}
+
+.term-audio:hover,
+.term-audio:focus-visible {
+  background-color: rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.term-audio:focus-visible {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+}
+
+.term-audio[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .term-cell .value-text {
   font-weight: 600;
 }
@@ -176,7 +216,7 @@ main.memorize-layout .panel {
   font-size: 0.9rem;
 }
 
-.memorize-table.hide-term .term-cell .value-text {
+.memorize-table.hide-term .term-cell .term-content {
   display: none;
 }
 
@@ -190,8 +230,8 @@ main.memorize-layout .panel {
   width: 100%;
 }
 
-.memorize-table.hide-term tr.peek-term .term-cell .value-text {
-  display: inline;
+.memorize-table.hide-term tr.peek-term .term-cell .term-content {
+  display: inline-flex;
 }
 
 .memorize-table.hide-term tr.peek-term .term-cell .value-hidden {
