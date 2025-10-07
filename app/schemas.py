@@ -31,6 +31,7 @@ class GroupCreate(BaseModel):
 
 class GroupUpdate(BaseModel):
     name: Optional[str] = None
+    folder_id: Optional[int] = None
 
 
 class WordCreate(BaseModel):
@@ -46,6 +47,7 @@ class WordCreate(BaseModel):
 
 
 class WordUpdate(BaseModel):
+    group_id: Optional[int] = None
     language: Optional[str] = None
     term: Optional[str] = None
     meaning: Optional[str] = None

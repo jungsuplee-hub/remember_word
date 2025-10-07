@@ -29,3 +29,14 @@ def update_folder(folder_id: int, payload: schemas.FolderUpdate, db: Session = D
 
     db.commit()
     return {"id": folder.id, "name": folder.name}
+
+
+@router.delete("/{folder_id}", response_model=dict)
+def delete_folder(folder_id: int, db: Session = Depends(get_db)):
+    folder = db.query(models.Folder).filter(models.Folder.id == folder_id).one_or_none()
+    if not folder:
+        raise HTTPException(404, "폴더를 찾을 수 없습니다.")
+
+    db.delete(folder)
+    db.commit()
+    return {"status": "deleted", "id": folder_id}

@@ -63,6 +63,7 @@ function renderFolders() {
       <span class="name">${folder.name}</span>
       <div class="item-actions">
         <button class="edit" data-action="edit" title="폴더 이름 수정">수정</button>
+        <button class="danger" data-action="delete" title="폴더 삭제">삭제</button>
       </div>
     `;
 
@@ -96,6 +97,8 @@ function renderGroups() {
       <span class="name">${group.name}</span>
       <div class="item-actions">
         <button class="edit" data-action="edit" title="그룹 이름 수정">수정</button>
+        <button class="secondary" data-action="move" title="다른 폴더로 이동">이동</button>
+        <button class="danger" data-action="delete" title="그룹 삭제">삭제</button>
       </div>
     `;
 
@@ -135,6 +138,8 @@ function renderWords() {
       </td>
       <td class="word-actions">
         <button class="edit-word" data-action="edit-word">수정</button>
+        <button class="secondary" data-action="move-word">이동</button>
+        <button class="danger" data-action="delete-word">삭제</button>
       </td>
     `;
     wordTable.appendChild(tr);
@@ -318,6 +323,22 @@ function handleWordTableClick(event) {
     }
   }
 
+  const moveBtn = event.target.closest('button[data-action="move-word"]');
+  if (moveBtn) {
+    const row = moveBtn.closest('tr');
+    const wordId = Number(row.dataset.id);
+    openWordMovePrompt(wordId);
+    return;
+  }
+
+  const deleteBtn = event.target.closest('button[data-action="delete-word"]');
+  if (deleteBtn) {
+    const row = deleteBtn.closest('tr');
+    const wordId = Number(row.dataset.id);
+    deleteWord(wordId);
+    return;
+  }
+
   const editBtn = event.target.closest('button[data-action="edit-word"]');
   if (editBtn) {
     const row = editBtn.closest('tr');
@@ -345,6 +366,20 @@ async function openFolderEditPrompt(folderId) {
   }
 }
 
+async function deleteFolder(folderId) {
+  const folder = state.folders.find((f) => f.id === folderId);
+  if (!folder) return;
+  const confirmed = confirm('폴더를 삭제하면 하위 그룹과 단어도 함께 삭제됩니다. 계속할까요?');
+  if (!confirmed) return;
+  try {
+    await api(`/folders/${folderId}`, { method: 'DELETE' });
+    showToast('폴더를 삭제했습니다.');
+    await fetchFolders();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
 async function openGroupEditPrompt(groupId) {
   const group = state.groups.find((g) => g.id === groupId);
   if (!group) return;
@@ -358,6 +393,56 @@ async function openGroupEditPrompt(groupId) {
       body: JSON.stringify({ name: trimmed }),
     });
     showToast('그룹 이름을 변경했습니다.');
+    await fetchGroups();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function openGroupMovePrompt(groupId) {
+  const group = state.groups.find((g) => g.id === groupId);
+  if (!group) return;
+  if (state.folders.length === 0) {
+    showToast('먼저 폴더를 만들어주세요.', 'error');
+    return;
+  }
+  const options = state.folders
+    .map((folder) => `${folder.id}: ${folder.name}`)
+    .join('\n');
+  const input = prompt(`이동할 폴더 ID를 선택하세요:\n${options}`, String(group.folder_id));
+  if (input === null) return;
+  const targetId = Number(input);
+  if (!Number.isInteger(targetId) || !state.folders.some((f) => f.id === targetId)) {
+    showToast('유효한 폴더 ID를 입력하세요.', 'error');
+    return;
+  }
+  if (targetId === group.folder_id) return;
+  try {
+    await api(`/groups/${groupId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ folder_id: targetId }),
+    });
+    showToast('그룹을 다른 폴더로 이동했습니다.');
+    if (state.activeFolderId === targetId) {
+      await fetchGroups();
+    } else if (state.activeFolderId === group.folder_id) {
+      await fetchGroups();
+    } else {
+      await fetchFolders();
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteGroup(groupId) {
+  const group = state.groups.find((g) => g.id === groupId);
+  if (!group) return;
+  const confirmed = confirm('그룹을 삭제하면 포함된 단어도 함께 삭제됩니다. 계속할까요?');
+  if (!confirmed) return;
+  try {
+    await api(`/groups/${groupId}`, { method: 'DELETE' });
+    showToast('그룹을 삭제했습니다.');
     await fetchGroups();
   } catch (err) {
     showToast(err.message, 'error');
@@ -390,6 +475,61 @@ async function openWordEditPrompt(wordId) {
     if (idx >= 0) state.words[idx] = updated;
     renderWords();
     showToast('단어를 수정했습니다.');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function openWordMovePrompt(wordId) {
+  const word = state.words.find((w) => w.id === wordId);
+  if (!word) return;
+  let groups = [];
+  try {
+    groups = await api('/groups');
+  } catch (err) {
+    showToast(err.message, 'error');
+    return;
+  }
+  if (!groups || groups.length === 0) {
+    showToast('이동할 그룹이 없습니다.', 'error');
+    return;
+  }
+  const options = groups
+    .map((g) => {
+      const folder = state.folders.find((f) => f.id === g.folder_id);
+      const folderName = folder ? folder.name : `폴더 ${g.folder_id}`;
+      return `${g.id}: [${folderName}] ${g.name}`;
+    })
+    .join('\n');
+  const input = prompt(`이동할 그룹을 선택하세요:\n${options}`, String(word.group_id));
+  if (input === null) return;
+  const targetId = Number(input);
+  if (!Number.isInteger(targetId) || !groups.some((g) => g.id === targetId)) {
+    showToast('유효한 그룹 ID를 입력하세요.', 'error');
+    return;
+  }
+  if (targetId === word.group_id) return;
+  try {
+    await api(`/words/${wordId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ group_id: targetId }),
+    });
+    showToast('단어를 다른 그룹으로 이동했습니다.');
+    await fetchWords();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteWord(wordId) {
+  const word = state.words.find((w) => w.id === wordId);
+  if (!word) return;
+  const confirmed = confirm('단어를 삭제하시겠습니까?');
+  if (!confirmed) return;
+  try {
+    await api(`/words/${wordId}`, { method: 'DELETE' });
+    showToast('단어를 삭제했습니다.');
+    await fetchWords();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -432,6 +572,13 @@ async function handleStructuredImport(event) {
 }
 
 function handleFolderListClick(event) {
+  const deleteBtn = event.target.closest('button[data-action="delete"]');
+  if (deleteBtn) {
+    const li = deleteBtn.closest('li');
+    const folderId = Number(li.dataset.id);
+    deleteFolder(folderId);
+    return;
+  }
   const editBtn = event.target.closest('button[data-action="edit"]');
   if (editBtn) {
     const li = editBtn.closest('li');
@@ -441,6 +588,20 @@ function handleFolderListClick(event) {
 }
 
 function handleGroupListClick(event) {
+  const moveBtn = event.target.closest('button[data-action="move"]');
+  if (moveBtn) {
+    const li = moveBtn.closest('li');
+    const groupId = Number(li.dataset.id);
+    openGroupMovePrompt(groupId);
+    return;
+  }
+  const deleteBtn = event.target.closest('button[data-action="delete"]');
+  if (deleteBtn) {
+    const li = deleteBtn.closest('li');
+    const groupId = Number(li.dataset.id);
+    deleteGroup(groupId);
+    return;
+  }
   const editBtn = event.target.closest('button[data-action="edit"]');
   if (editBtn) {
     const li = editBtn.closest('li');

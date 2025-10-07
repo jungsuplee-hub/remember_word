@@ -37,11 +37,27 @@ def update_word(word_id: int, payload: schemas.WordUpdate, db: Session = Depends
     if not word:
         raise HTTPException(404, "단어를 찾을 수 없습니다.")
     data = payload.model_dump(exclude_unset=True)
+    if "group_id" in data and data["group_id"] is not None:
+        group = db.query(models.Group).filter(models.Group.id == data["group_id"]).one_or_none()
+        if not group:
+            raise HTTPException(404, "이동할 그룹을 찾을 수 없습니다.")
+        word.group_id = data.pop("group_id")
     for key, value in data.items():
         setattr(word, key, value)
     db.commit()
     db.refresh(word)
     return word
+
+
+@router.delete("/{word_id}", response_model=dict)
+def delete_word(word_id: int, db: Session = Depends(get_db)):
+    word = db.query(models.Word).filter(models.Word.id == word_id).one_or_none()
+    if not word:
+        raise HTTPException(404, "단어를 찾을 수 없습니다.")
+
+    db.delete(word)
+    db.commit()
+    return {"status": "deleted", "id": word_id}
 
 @router.post("/import", response_model=dict)
 async def import_words(
