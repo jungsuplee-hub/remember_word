@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remember Word - 시험</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div>
+          <h1>시험 모드</h1>
+          <p>암기한 단어를 확인해보세요.</p>
+        </div>
+        <a href="/static/index.html" class="link-button">단어 관리로 이동</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="panel-header">
+          <h2>시험 설정</h2>
+          <span class="panel-subtitle" id="exam-subtitle">폴더와 그룹을 선택한 뒤 시험을 시작하세요.</span>
+        </div>
+
+        <form id="exam-form" class="form">
+          <div class="grid">
+            <label>
+              폴더
+              <select id="exam-folder" required>
+                <option value="">폴더 선택</option>
+              </select>
+            </label>
+            <label>
+              그룹
+              <select id="exam-group" name="group" required>
+                <option value="">그룹 선택</option>
+              </select>
+            </label>
+            <label>
+              출제 수
+              <input name="limit" type="number" min="1" placeholder="전체" />
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              출제 방향
+              <select name="direction">
+                <option value="term_to_meaning">단어 → 뜻</option>
+                <option value="meaning_to_term">뜻 → 단어</option>
+              </select>
+            </label>
+            <label>
+              최소 별점
+              <select name="min_star">
+                <option value="">전체</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+            <label class="inline">
+              <input type="checkbox" name="random" checked />
+              순서 섞기
+            </label>
+          </div>
+          <button type="submit">시험 시작</button>
+        </form>
+
+        <div id="exam-content" class="quiz-content hidden">
+          <div id="exam-progress" class="quiz-progress"></div>
+
+          <div id="exam-question" class="quiz-question">
+            <h3 id="exam-prompt"></h3>
+            <p id="exam-reading" class="quiz-reading"></p>
+            <div class="quiz-actions">
+              <button type="button" id="exam-preview" class="secondary">정답 미리보기</button>
+              <button type="button" id="exam-fail" class="danger">다시암기</button>
+              <button type="button" id="exam-success" class="primary">암기완료</button>
+            </div>
+            <div id="exam-answer" class="quiz-correct hidden"></div>
+          </div>
+
+          <div id="exam-summary" class="quiz-summary hidden">
+            <h3>시험 결과</h3>
+            <p id="exam-summary-text"></p>
+            <div class="quiz-summary-actions">
+              <button type="button" id="exam-retry" class="secondary">틀린 문제 다시 풀기</button>
+              <button type="button" id="exam-reset">새 시험 준비</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <script src="/static/exam.js" defer></script>
+  </body>
+</html>

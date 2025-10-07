@@ -4,16 +4,6 @@ const state = {
   words: [],
   activeFolderId: null,
   activeGroupId: null,
-  quiz: {
-    active: false,
-    completed: false,
-    sessionId: null,
-    direction: null,
-    questions: [],
-    index: 0,
-    progress: null,
-    hasAnsweredCurrent: false,
-  },
 };
 
 const folderList = document.querySelector('#folder-list');
@@ -22,23 +12,9 @@ const wordTable = document.querySelector('#word-table');
 const groupsSubtitle = document.querySelector('#groups-subtitle');
 const toast = document.querySelector('#toast');
 const minStarSelect = document.querySelector('#word-min-star');
-const quizSubtitle = document.querySelector('#quiz-subtitle');
-const quizForm = document.querySelector('#quiz-form');
-const quizContent = document.querySelector('#quiz-content');
-const quizProgress = document.querySelector('#quiz-progress');
-const quizQuestionContainer = document.querySelector('#quiz-question');
-const quizPrompt = document.querySelector('#quiz-prompt');
-const quizReading = document.querySelector('#quiz-reading');
-const quizAnswerInput = document.querySelector('#quiz-answer');
-const quizSubmitBtn = document.querySelector('#quiz-submit');
-const quizShowAnswerBtn = document.querySelector('#quiz-show-answer');
-const quizNextBtn = document.querySelector('#quiz-next');
-const quizFeedback = document.querySelector('#quiz-feedback');
-const quizCorrectAnswer = document.querySelector('#quiz-correct-answer');
-const quizSummary = document.querySelector('#quiz-summary');
-const quizSummaryText = document.querySelector('#quiz-summary-text');
-const quizRetryBtn = document.querySelector('#quiz-retry');
-const quizResetBtn = document.querySelector('#quiz-reset');
+const importForm = document.querySelector('#import-form');
+const importFileInput = document.querySelector('#import-file');
+const importLanguageInput = document.querySelector('#import-language');
 
 function showToast(message, type = 'info') {
   toast.textContent = message;
@@ -77,14 +53,23 @@ function renderFolders() {
     folderList.innerHTML = '<li class="empty">등록된 폴더가 없습니다.</li>';
     return;
   }
+
   state.folders.forEach((folder) => {
     const li = document.createElement('li');
     li.dataset.id = folder.id;
-    li.innerHTML = `<span class="name">${folder.name}</span>`;
-    if (state.activeFolderId === folder.id) {
-      li.classList.add('active');
-    }
-    li.addEventListener('click', () => selectFolder(folder.id));
+    li.classList.toggle('active', state.activeFolderId === folder.id);
+
+    li.innerHTML = `
+      <span class="name">${folder.name}</span>
+      <div class="item-actions">
+        <button class="edit" data-action="edit" title="폴더 이름 수정">수정</button>
+      </div>
+    `;
+
+    li.addEventListener('click', (event) => {
+      if (event.target.closest('button')) return;
+      selectFolder(folder.id);
+    });
     folderList.appendChild(li);
   });
 }
@@ -97,18 +82,28 @@ function renderGroups() {
     return;
   }
   groupsSubtitle.textContent = `선택한 폴더 ID: ${state.activeFolderId}`;
+
   if (state.groups.length === 0) {
     groupList.innerHTML = '<li class="empty">아직 그룹이 없습니다.</li>';
     return;
   }
+
   state.groups.forEach((group) => {
     const li = document.createElement('li');
     li.dataset.id = group.id;
-    li.innerHTML = `<span class="name">${group.name}</span>`;
-    if (state.activeGroupId === group.id) {
-      li.classList.add('active');
-    }
-    li.addEventListener('click', () => selectGroup(group.id));
+    li.classList.toggle('active', state.activeGroupId === group.id);
+    li.innerHTML = `
+      <span class="name">${group.name}</span>
+      <div class="item-actions">
+        <button class="edit" data-action="edit" title="그룹 이름 수정">수정</button>
+      </div>
+    `;
+
+    li.addEventListener('click', (event) => {
+      if (event.target.closest('button')) return;
+      selectGroup(group.id);
+    });
+
     groupList.appendChild(li);
   });
 }
@@ -116,15 +111,17 @@ function renderGroups() {
 function renderWords() {
   wordTable.innerHTML = '';
   if (!state.activeGroupId) {
-    wordTable.innerHTML = '<tr><td colspan="4">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
+    wordTable.innerHTML = '<tr><td colspan="5">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
     return;
   }
   if (state.words.length === 0) {
-    wordTable.innerHTML = '<tr><td colspan="4">등록된 단어가 없습니다.</td></tr>';
+    wordTable.innerHTML = '<tr><td colspan="5">등록된 단어가 없습니다.</td></tr>';
     return;
   }
+
   state.words.forEach((word) => {
     const tr = document.createElement('tr');
+    tr.dataset.id = word.id;
     tr.innerHTML = `
       <td>${word.language}</td>
       <td>${word.term}</td>
@@ -135,6 +132,9 @@ function renderWords() {
           <button class="star-up" title="별점 +1">▲</button>
           <button class="star-down" title="별점 -1">▼</button>
         </div>
+      </td>
+      <td class="word-actions">
+        <button class="edit-word" data-action="edit-word">수정</button>
       </td>
     `;
     wordTable.appendChild(tr);
@@ -150,7 +150,6 @@ async function fetchFolders() {
       state.groups = [];
       state.activeGroupId = null;
       state.words = [];
-      resetQuizState();
     }
     renderFolders();
     renderGroups();
@@ -168,7 +167,6 @@ async function fetchGroups() {
     if (!state.groups.find((g) => g.id === state.activeGroupId)) {
       state.activeGroupId = null;
       state.words = [];
-      resetQuizState();
     }
     renderGroups();
     renderWords();
@@ -192,22 +190,20 @@ async function fetchWords() {
 }
 
 async function selectFolder(id) {
+  const changed = state.activeFolderId !== id;
   state.activeFolderId = id;
   state.activeGroupId = null;
   state.words = [];
-  resetQuizState();
   renderFolders();
   renderGroups();
   renderWords();
-  await fetchGroups();
+  if (changed) {
+    await fetchGroups();
+  }
 }
 
 async function selectGroup(id) {
-  const changed = state.activeGroupId !== id;
   state.activeGroupId = id;
-  if (changed) {
-    resetQuizState();
-  }
   renderGroups();
   await fetchWords();
 }
@@ -309,302 +305,148 @@ async function changeStar(wordId, delta) {
 }
 
 function handleWordTableClick(event) {
-  const container = event.target.closest('.star-cell');
-  if (!container) return;
-  const wordId = Number(container.dataset.id);
-  if (event.target.matches('.star-up')) {
-    changeStar(wordId, +1);
-  } else if (event.target.matches('.star-down')) {
-    changeStar(wordId, -1);
-  }
-}
-
-function updateQuizFormAvailability() {
-  if (!quizForm) return;
-  const hasGroup = Boolean(state.activeGroupId);
-  const disabled = !hasGroup || state.quiz.active;
-  quizForm
-    .querySelectorAll('input, select, button')
-    .forEach((el) => {
-      el.disabled = disabled;
-    });
-}
-
-function updateQuizSubtitle() {
-  if (!quizSubtitle) return;
-  if (!state.activeGroupId) {
-    quizSubtitle.textContent = '그룹을 선택하면 시험을 시작할 수 있습니다.';
-    return;
-  }
-
-  if (state.quiz.active) {
-    const answered = state.quiz.progress ? state.quiz.progress.answered : 0;
-    const total = state.quiz.questions.length || (state.quiz.progress ? state.quiz.progress.total : 0);
-    quizSubtitle.textContent = `시험 진행 중 (${answered}/${total} 문항)`;
-  } else if (state.quiz.completed && state.quiz.progress) {
-    quizSubtitle.textContent = `마지막 시험 결과: ${state.quiz.progress.correct}/${state.quiz.progress.total} 정답`;
-  } else {
-    quizSubtitle.textContent = '옵션을 설정하고 시험을 시작하세요.';
-  }
-}
-
-function resetQuizDisplay() {
-  quizContent.classList.add('hidden');
-  quizQuestionContainer.classList.remove('hidden');
-  quizSummary.classList.add('hidden');
-  quizPrompt.textContent = '';
-  quizReading.textContent = '';
-  quizReading.classList.add('hidden');
-  quizAnswerInput.value = '';
-  quizAnswerInput.disabled = false;
-  quizSubmitBtn.disabled = false;
-  quizShowAnswerBtn.disabled = false;
-  quizNextBtn.disabled = true;
-  quizFeedback.textContent = '';
-  quizFeedback.classList.remove('success', 'error');
-  quizCorrectAnswer.textContent = '';
-  quizCorrectAnswer.classList.add('hidden');
-  quizProgress.textContent = '';
-}
-
-function resetQuizState() {
-  state.quiz.active = false;
-  state.quiz.completed = false;
-  state.quiz.sessionId = null;
-  state.quiz.direction = null;
-  state.quiz.questions = [];
-  state.quiz.index = 0;
-  state.quiz.progress = null;
-  state.quiz.hasAnsweredCurrent = false;
-  if (quizForm) {
-    resetQuizDisplay();
-    updateQuizFormAvailability();
-    updateQuizSubtitle();
-  }
-}
-
-function updateQuizProgressUI() {
-  if (!state.quiz.progress) {
-    quizProgress.textContent = '';
-    return;
-  }
-  const { answered, total, correct, remaining } = state.quiz.progress;
-  quizProgress.textContent = `진행: ${answered}/${total} · 정답 ${correct} · 남은 ${remaining}`;
-  updateQuizSubtitle();
-}
-
-function showQuizQuestion() {
-  const question = state.quiz.questions[state.quiz.index];
-  if (!question) return;
-  quizContent.classList.remove('hidden');
-  quizSummary.classList.add('hidden');
-  quizQuestionContainer.classList.remove('hidden');
-  quizPrompt.textContent = `${state.quiz.index + 1}. ${question.prompt}`;
-  if (question.reading) {
-    quizReading.textContent = `읽기: ${question.reading}`;
-    quizReading.classList.remove('hidden');
-  } else {
-    quizReading.textContent = '';
-    quizReading.classList.add('hidden');
-  }
-  quizAnswerInput.value = '';
-  quizAnswerInput.disabled = false;
-  quizAnswerInput.focus();
-  quizSubmitBtn.disabled = false;
-  quizShowAnswerBtn.disabled = false;
-  quizNextBtn.disabled = true;
-  quizFeedback.textContent = '';
-  quizFeedback.classList.remove('success', 'error');
-  quizCorrectAnswer.textContent = '';
-  quizCorrectAnswer.classList.add('hidden');
-  state.quiz.hasAnsweredCurrent = false;
-  updateQuizProgressUI();
-}
-
-async function handleQuizStart(event) {
-  event.preventDefault();
-  if (!state.activeGroupId) {
-    showToast('먼저 그룹을 선택하세요.', 'error');
-    return;
-  }
-
-  const formData = new FormData(event.currentTarget);
-  const payload = {
-    group_id: state.activeGroupId,
-    random: formData.get('random') !== null,
-    direction: formData.get('direction') || 'term_to_meaning',
-    mode: 'exam',
-  };
-  const limit = formData.get('limit');
-  if (limit) {
-    payload.limit = Number(limit);
-  }
-  const minStar = formData.get('min_star');
-  if (minStar) {
-    payload.min_star = Number(minStar);
-  }
-
-  state.quiz.active = true;
-  state.quiz.completed = false;
-  updateQuizFormAvailability();
-  updateQuizSubtitle();
-  resetQuizDisplay();
-
-  try {
-    const result = await api('/quizzes/start', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    state.quiz.sessionId = result.session_id;
-    state.quiz.direction = result.direction;
-    state.quiz.questions = result.questions || [];
-    state.quiz.index = 0;
-    state.quiz.progress = {
-      session_id: result.session_id,
-      total: result.total,
-      answered: 0,
-      correct: 0,
-      remaining: result.total,
-      incorrect_question_ids: [],
-    };
-    state.quiz.hasAnsweredCurrent = false;
-    showQuizQuestion();
-    showToast('시험이 시작되었습니다.');
-  } catch (err) {
-    state.quiz.active = false;
-    updateQuizFormAvailability();
-    updateQuizSubtitle();
-    resetQuizDisplay();
-    showToast(err.message, 'error');
-  }
-}
-
-async function submitQuizAnswer() {
-  if (!state.quiz.sessionId || state.quiz.hasAnsweredCurrent) return;
-  const question = state.quiz.questions[state.quiz.index];
-  if (!question) return;
-
-  const userAnswer = quizAnswerInput.value;
-  const normalizedUser = userAnswer.trim().toLowerCase();
-  const normalizedAnswer = question.answer.trim().toLowerCase();
-  const isCorrect = normalizedUser !== '' && normalizedAnswer !== '' && normalizedUser === normalizedAnswer;
-
-  quizSubmitBtn.disabled = true;
-  quizAnswerInput.disabled = true;
-
-  try {
-    const progress = await api(`/quizzes/${state.quiz.sessionId}/answer`, {
-      method: 'POST',
-      body: JSON.stringify({
-        question_id: question.id,
-        answer: userAnswer,
-        is_correct: isCorrect,
-      }),
-    });
-    state.quiz.progress = progress;
-    state.quiz.hasAnsweredCurrent = true;
-    quizNextBtn.disabled = false;
-    quizFeedback.textContent = isCorrect ? '정답입니다! 잘하셨어요.' : '틀렸습니다. 정답을 확인해보세요.';
-    quizFeedback.classList.toggle('success', isCorrect);
-    quizFeedback.classList.toggle('error', !isCorrect);
-    if (!isCorrect) {
-      quizCorrectAnswer.textContent = `정답: ${question.answer}`;
-      quizCorrectAnswer.classList.remove('hidden');
+  const starContainer = event.target.closest('.star-cell');
+  if (starContainer) {
+    const wordId = Number(starContainer.dataset.id);
+    if (event.target.matches('.star-up')) {
+      changeStar(wordId, +1);
+      return;
     }
-    updateQuizProgressUI();
+    if (event.target.matches('.star-down')) {
+      changeStar(wordId, -1);
+      return;
+    }
+  }
+
+  const editBtn = event.target.closest('button[data-action="edit-word"]');
+  if (editBtn) {
+    const row = editBtn.closest('tr');
+    const wordId = Number(row.dataset.id);
+    openWordEditPrompt(wordId);
+  }
+}
+
+async function openFolderEditPrompt(folderId) {
+  const folder = state.folders.find((f) => f.id === folderId);
+  if (!folder) return;
+  const nextName = prompt('새 폴더 이름을 입력하세요.', folder.name);
+  if (nextName === null) return;
+  const trimmed = nextName.trim();
+  if (!trimmed || trimmed === folder.name) return;
+  try {
+    await api(`/folders/${folderId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name: trimmed }),
+    });
+    showToast('폴더 이름을 변경했습니다.');
+    await fetchFolders();
   } catch (err) {
-    quizSubmitBtn.disabled = false;
-    quizAnswerInput.disabled = false;
     showToast(err.message, 'error');
   }
 }
 
-function showQuizAnswer() {
-  const question = state.quiz.questions[state.quiz.index];
-  if (!question) return;
-  quizCorrectAnswer.textContent = `정답: ${question.answer}`;
-  quizCorrectAnswer.classList.remove('hidden');
-}
-
-function showQuizSummary() {
-  state.quiz.active = false;
-  state.quiz.completed = true;
-  updateQuizFormAvailability();
-  quizQuestionContainer.classList.add('hidden');
-  quizSummary.classList.remove('hidden');
-  const progress = state.quiz.progress;
-  if (progress) {
-    const incorrect = progress.total - progress.correct;
-    quizSummaryText.textContent = `총 ${progress.total}문제 중 ${progress.correct}문제를 맞히고 ${incorrect}문제를 틀렸습니다.`;
-    quizRetryBtn.disabled = progress.incorrect_question_ids.length === 0;
-  } else {
-    quizSummaryText.textContent = '시험 결과를 가져오지 못했습니다.';
-    quizRetryBtn.disabled = true;
+async function openGroupEditPrompt(groupId) {
+  const group = state.groups.find((g) => g.id === groupId);
+  if (!group) return;
+  const nextName = prompt('새 그룹 이름을 입력하세요.', group.name);
+  if (nextName === null) return;
+  const trimmed = nextName.trim();
+  if (!trimmed || trimmed === group.name) return;
+  try {
+    await api(`/groups/${groupId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name: trimmed }),
+    });
+    showToast('그룹 이름을 변경했습니다.');
+    await fetchGroups();
+  } catch (err) {
+    showToast(err.message, 'error');
   }
-  quizContent.classList.remove('hidden');
-  updateQuizSubtitle();
 }
 
-function handleQuizNext() {
-  if (!state.quiz.sessionId) return;
-  if (!state.quiz.hasAnsweredCurrent) {
-    showToast('답안을 제출한 뒤 다음 문제로 이동하세요.', 'error');
+async function openWordEditPrompt(wordId) {
+  const word = state.words.find((w) => w.id === wordId);
+  if (!word) return;
+  const nextTerm = prompt('단어를 수정하세요.', word.term);
+  if (nextTerm === null) return;
+  const term = nextTerm.trim();
+  if (!term) {
+    showToast('단어는 비워둘 수 없습니다.', 'error');
     return;
   }
-  if (state.quiz.index + 1 < state.quiz.questions.length) {
-    state.quiz.index += 1;
-    showQuizQuestion();
-  } else {
-    showQuizSummary();
+  const nextMeaning = prompt('뜻을 수정하세요.', word.meaning);
+  if (nextMeaning === null) return;
+  const meaning = nextMeaning.trim();
+  if (!meaning) {
+    showToast('뜻은 비워둘 수 없습니다.', 'error');
+    return;
+  }
+  try {
+    const updated = await api(`/words/${wordId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ term, meaning }),
+    });
+    const idx = state.words.findIndex((w) => w.id === wordId);
+    if (idx >= 0) state.words[idx] = updated;
+    renderWords();
+    showToast('단어를 수정했습니다.');
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 }
 
-async function handleQuizRetry() {
-  if (!state.quiz.sessionId) return;
-  if (!state.quiz.progress || state.quiz.progress.incorrect_question_ids.length === 0) {
-    showToast('틀린 문제가 없습니다.', 'info');
+async function handleStructuredImport(event) {
+  event.preventDefault();
+  const file = importFileInput.files[0];
+  if (!file) {
+    showToast('업로드할 파일을 선택하세요.', 'error');
     return;
   }
 
-  state.quiz.active = true;
-  state.quiz.completed = false;
-  updateQuizFormAvailability();
-  resetQuizDisplay();
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('default_language', importLanguageInput.value || 'en');
 
   try {
-    const result = await api(`/quizzes/${state.quiz.sessionId}/retry`, {
+    const res = await fetch('/words/import-structured', {
       method: 'POST',
-      body: JSON.stringify({}),
+      body: formData,
     });
-    state.quiz.sessionId = result.session_id;
-    state.quiz.direction = result.direction;
-    state.quiz.questions = result.questions || [];
-    state.quiz.index = 0;
-    state.quiz.progress = {
-      session_id: result.session_id,
-      total: result.total,
-      answered: 0,
-      correct: 0,
-      remaining: result.total,
-      incorrect_question_ids: [],
-    };
-    state.quiz.hasAnsweredCurrent = false;
-    showQuizQuestion();
-    showToast('틀린 문제 시험을 다시 시작합니다.');
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || '가져오기 중 오류가 발생했습니다.');
+    }
+    const summary = await res.json();
+    showToast(`추가 ${summary.inserted}건, 건너뜀 ${summary.skipped}건`);
+    importForm.reset();
+    await fetchFolders();
+    if (state.activeFolderId) {
+      await fetchGroups();
+      if (state.activeGroupId) {
+        await fetchWords();
+      }
+    }
   } catch (err) {
-    state.quiz.active = false;
-    updateQuizFormAvailability();
-    updateQuizSubtitle();
-    resetQuizDisplay();
     showToast(err.message, 'error');
   }
 }
 
-function handleQuizReset() {
-  resetQuizState();
-  updateQuizFormAvailability();
-  updateQuizSubtitle();
-  showToast('시험 설정이 초기화되었습니다.');
+function handleFolderListClick(event) {
+  const editBtn = event.target.closest('button[data-action="edit"]');
+  if (editBtn) {
+    const li = editBtn.closest('li');
+    const folderId = Number(li.dataset.id);
+    openFolderEditPrompt(folderId);
+  }
+}
+
+function handleGroupListClick(event) {
+  const editBtn = event.target.closest('button[data-action="edit"]');
+  if (editBtn) {
+    const li = editBtn.closest('li');
+    const groupId = Number(li.dataset.id);
+    openGroupEditPrompt(groupId);
+  }
 }
 
 function init() {
@@ -616,16 +458,12 @@ function init() {
     event.preventDefault();
     fetchWords();
   });
+  minStarSelect.addEventListener('change', fetchWords);
+  folderList.addEventListener('click', handleFolderListClick);
+  groupList.addEventListener('click', handleGroupListClick);
   wordTable.addEventListener('click', handleWordTableClick);
-  if (quizForm) {
-    quizForm.addEventListener('submit', handleQuizStart);
-    quizSubmitBtn.addEventListener('click', submitQuizAnswer);
-    quizShowAnswerBtn.addEventListener('click', showQuizAnswer);
-    quizNextBtn.addEventListener('click', handleQuizNext);
-    quizRetryBtn.addEventListener('click', handleQuizRetry);
-    quizResetBtn.addEventListener('click', handleQuizReset);
-    updateQuizFormAvailability();
-    updateQuizSubtitle();
+  if (importForm) {
+    importForm.addEventListener('submit', handleStructuredImport);
   }
   fetchFolders();
 }

@@ -19,9 +19,19 @@ class FolderCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
 
+
+class FolderUpdate(BaseModel):
+    name: Optional[str] = None
+
+
 class GroupCreate(BaseModel):
     folder_id: int
     name: str
+
+
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+
 
 class WordCreate(BaseModel):
     group_id: int
@@ -96,6 +106,13 @@ class QuizAnswerSubmit(BaseModel):
     question_id: int
     answer: Optional[str] = None
     is_correct: bool
+
+
+class WordImportStructuredSummary(BaseModel):
+    inserted: int
+    skipped: int
+    folders_created: int
+    groups_created: int
 
 
 class QuizProgress(BaseModel):
