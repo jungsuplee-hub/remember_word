@@ -117,9 +117,15 @@ function updateSubtitle() {
   subtitle.textContent = `총 ${state.words.length}개의 단어`;
 }
 
-function createCell({ text, hiddenLabel, buttonClass, peeked }) {
+function createCell({ text, hiddenLabel, type }) {
   const cell = document.createElement('td');
-  cell.className = `${buttonClass === 'preview-term' ? 'term-cell' : 'meaning-cell'}`;
+  cell.className = type === 'term' ? 'term-cell' : 'meaning-cell';
+  cell.dataset.type = type;
+  cell.tabIndex = -1;
+  cell.setAttribute('role', 'button');
+  cell.setAttribute('aria-disabled', 'true');
+  cell.setAttribute('aria-label', type === 'term' ? '단어' : '뜻');
+  cell.setAttribute('aria-pressed', 'false');
 
   const visibleSpan = document.createElement('span');
   visibleSpan.className = 'value-text';
@@ -129,15 +135,8 @@ function createCell({ text, hiddenLabel, buttonClass, peeked }) {
   hiddenSpan.className = 'value-hidden';
   hiddenSpan.textContent = hiddenLabel;
 
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = `${buttonClass} secondary`;
-  const label = buttonClass === 'preview-term' ? '단어' : '뜻';
-  button.textContent = peeked ? `${label} 숨기기` : `${label} 보기`;
-
   cell.appendChild(visibleSpan);
   cell.appendChild(hiddenSpan);
-  cell.appendChild(button);
   return cell;
 }
 
@@ -179,22 +178,21 @@ function renderWords() {
 
     const termCell = createCell({
       text: word.term,
-      hiddenLabel: '단어 숨김',
-      buttonClass: 'preview-term',
-      peeked: state.peekTerm.has(word.id),
+      hiddenLabel: '단어 가려짐 · 길게 눌러 보기',
+      type: 'term',
     });
 
     const meaningCell = createCell({
       text: word.meaning,
-      hiddenLabel: '뜻 숨김',
-      buttonClass: 'preview-meaning',
-      peeked: state.peekMeaning.has(word.id),
+      hiddenLabel: '뜻 가려짐 · 길게 눌러 보기',
+      type: 'meaning',
     });
 
     row.appendChild(termCell);
     row.appendChild(meaningCell);
 
     tableBody.appendChild(row);
+    updateRowState(row);
   });
 
   updateSubtitle();
@@ -214,6 +212,21 @@ function updateToggleButtons() {
 
   tableContainer.classList.toggle('hide-term', state.hideTerm && hasWords);
   tableContainer.classList.toggle('hide-meaning', state.hideMeaning && hasWords);
+
+  const termInteractive = state.hideTerm && hasWords;
+  const meaningInteractive = state.hideMeaning && hasWords;
+
+  tableBody.querySelectorAll('td.term-cell').forEach((cell) => {
+    cell.tabIndex = termInteractive ? 0 : -1;
+    cell.setAttribute('aria-disabled', termInteractive ? 'false' : 'true');
+    cell.setAttribute('aria-label', termInteractive ? '단어 보기' : '단어');
+  });
+
+  tableBody.querySelectorAll('td.meaning-cell').forEach((cell) => {
+    cell.tabIndex = meaningInteractive ? 0 : -1;
+    cell.setAttribute('aria-disabled', meaningInteractive ? 'false' : 'true');
+    cell.setAttribute('aria-label', meaningInteractive ? '뜻 보기' : '뜻');
+  });
 }
 
 function resetPeekStates() {
@@ -308,43 +321,46 @@ function setPeekState(id, type, shouldPeek) {
   }
 }
 
-function updateRowButtons(row) {
+function updateRowState(row) {
   const id = Number(row.dataset.id);
-  const termButton = row.querySelector('.preview-term');
-  const meaningButton = row.querySelector('.preview-meaning');
+  if (!Number.isFinite(id)) return;
+  row.classList.toggle('peek-term', state.peekTerm.has(id));
+  row.classList.toggle('peek-meaning', state.peekMeaning.has(id));
 
-  if (termButton) {
-    const peeked = state.peekTerm.has(id);
-    termButton.textContent = peeked ? '단어 숨기기' : '단어 보기';
-    row.classList.toggle('peek-term', peeked);
+  const termCell = row.querySelector('.term-cell');
+  if (termCell) {
+    termCell.setAttribute('aria-pressed', state.peekTerm.has(id) ? 'true' : 'false');
   }
 
-  if (meaningButton) {
-    const peeked = state.peekMeaning.has(id);
-    meaningButton.textContent = peeked ? '뜻 숨기기' : '뜻 보기';
-    row.classList.toggle('peek-meaning', peeked);
+  const meaningCell = row.querySelector('.meaning-cell');
+  if (meaningCell) {
+    meaningCell.setAttribute('aria-pressed', state.peekMeaning.has(id) ? 'true' : 'false');
   }
 }
 
 function handlePointerDown(event) {
-  const button = event.target.closest('button');
-  if (!button) return;
+  const cell = event.target.closest('td');
+  if (!cell) return;
 
-  const row = button.closest('tr');
+  if (cell.getAttribute('aria-disabled') === 'true') return;
+
+  const row = cell.closest('tr');
   if (!row || !row.dataset.id) return;
 
   const id = Number(row.dataset.id);
   let peekType = null;
-  if (button.classList.contains('preview-term')) {
+  if (cell.dataset.type === 'term') {
     if (!state.hideTerm) return;
     peekType = 'term';
     setPeekState(id, peekType, true);
-    updateRowButtons(row);
-  } else if (button.classList.contains('preview-meaning')) {
+    updateRowState(row);
+    cell.focus({ preventScroll: true });
+  } else if (cell.dataset.type === 'meaning') {
     if (!state.hideMeaning) return;
     peekType = 'meaning';
     setPeekState(id, peekType, true);
-    updateRowButtons(row);
+    updateRowState(row);
+    cell.focus({ preventScroll: true });
   } else {
     return;
   }
@@ -352,7 +368,7 @@ function handlePointerDown(event) {
   const handleRelease = (ev) => {
     if (ev.pointerId !== event.pointerId) return;
     setPeekState(id, peekType, false);
-    updateRowButtons(row);
+    updateRowState(row);
     window.removeEventListener('pointerup', handleRelease);
     window.removeEventListener('pointercancel', handleRelease);
   };
@@ -362,6 +378,52 @@ function handlePointerDown(event) {
 }
 
 tableBody.addEventListener('pointerdown', handlePointerDown);
+
+function handleKeyDown(event) {
+  if (event.key !== ' ' && event.key !== 'Enter') return;
+  const cell = event.target.closest('td');
+  if (!cell) return;
+  if (cell.getAttribute('aria-disabled') === 'true') return;
+
+  const row = cell.closest('tr');
+  if (!row || !row.dataset.id) return;
+
+  const id = Number(row.dataset.id);
+  let peekType = null;
+  if (cell.dataset.type === 'term') {
+    if (!state.hideTerm) return;
+    peekType = 'term';
+  } else if (cell.dataset.type === 'meaning') {
+    if (!state.hideMeaning) return;
+    peekType = 'meaning';
+  } else {
+    return;
+  }
+
+  setPeekState(id, peekType, true);
+  updateRowState(row);
+  event.preventDefault();
+
+  const handleKeyUp = (ev) => {
+    if (ev.target !== cell) return;
+    setPeekState(id, peekType, false);
+    updateRowState(row);
+    cell.removeEventListener('keyup', handleKeyUp);
+    cell.removeEventListener('blur', handleBlur);
+  };
+
+  const handleBlur = () => {
+    setPeekState(id, peekType, false);
+    updateRowState(row);
+    cell.removeEventListener('keyup', handleKeyUp);
+    cell.removeEventListener('blur', handleBlur);
+  };
+
+  cell.addEventListener('keyup', handleKeyUp);
+  cell.addEventListener('blur', handleBlur, { once: true });
+}
+
+tableBody.addEventListener('keydown', handleKeyDown);
 
 toggleTermBtn.addEventListener('click', () => {
   if (!state.words.length) return;

@@ -105,6 +105,7 @@ main.memorize-layout .panel {
 .memorize-panel-header {
   flex-wrap: wrap;
   gap: 0.75rem;
+  justify-content: space-between;
 }
 
 .memorize-heading {
@@ -116,6 +117,15 @@ main.memorize-layout .panel {
 .memorize-toggle-group {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.memorize-toggle-row {
+  padding: 0.25rem 1.25rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -142,6 +152,8 @@ main.memorize-layout .panel {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  align-items: flex-start;
+  touch-action: manipulation;
 }
 
 .term-cell .value-text {
@@ -154,27 +166,28 @@ main.memorize-layout .panel {
 
 .value-hidden {
   display: none;
-  color: #94a3b8;
-}
-
-.preview-term,
-.preview-meaning {
-  display: none;
-  align-self: flex-start;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.75rem;
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px dashed rgba(37, 99, 235, 0.35);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+  width: 100%;
+  font-size: 0.9rem;
 }
 
 .memorize-table.hide-term .term-cell .value-text {
   display: none;
 }
 
-.memorize-table.hide-term .term-cell .value-hidden {
-  display: inline;
+.memorize-table.hide-term .term-cell {
+  cursor: pointer;
 }
 
-.memorize-table.hide-term .term-cell .preview-term {
+.memorize-table.hide-term .term-cell .value-hidden {
   display: inline-flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .memorize-table.hide-term tr.peek-term .term-cell .value-text {
@@ -189,12 +202,14 @@ main.memorize-layout .panel {
   display: none;
 }
 
-.memorize-table.hide-meaning .meaning-cell .value-hidden {
-  display: inline;
+.memorize-table.hide-meaning .meaning-cell {
+  cursor: pointer;
 }
 
-.memorize-table.hide-meaning .meaning-cell .preview-meaning {
+.memorize-table.hide-meaning .meaning-cell .value-hidden {
   display: inline-flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .memorize-table.hide-meaning tr.peek-meaning .meaning-cell .value-text {
@@ -211,6 +226,11 @@ main.memorize-layout .panel {
 
 #groups {
   grid-area: groups;
+}
+
+#folders,
+#groups {
+  max-height: calc(100vh - 12rem);
 }
 
 #words {
@@ -747,6 +767,27 @@ tbody tr:hover {
   }
 }
 
+@media (max-width: 1024px) {
+  #folders,
+  #groups {
+    max-height: calc(100vh - 14rem);
+  }
+
+  .memorize-toggle-row {
+    justify-content: center;
+  }
+
+  .memorize-toggle-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .memorize-toggle-group button {
+    flex: 1 1 200px;
+    min-width: min(220px, 100%);
+  }
+}
+
 @media (max-width: 900px) {
   main {
     grid-template-columns: 1fr;
@@ -760,6 +801,11 @@ tbody tr:hover {
   #groups,
   #words {
     grid-area: auto;
+  }
+
+  #folders,
+  #groups {
+    max-height: none;
   }
 
   main.exam-layout {
