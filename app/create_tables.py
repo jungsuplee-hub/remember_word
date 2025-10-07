@@ -3,7 +3,7 @@
 import sys
 
 
-MIN_PYTHON = (3, 8)
+MIN_PYTHON = (3, 7)
 
 if sys.version_info < MIN_PYTHON:
     raise SystemExit(
