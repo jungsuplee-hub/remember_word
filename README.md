@@ -21,7 +21,7 @@
 ## 로컬 개발(백엔드)
 1. 환경 변수 `DB_URL`을 설정합니다. (예: `sqlite:///./remember_word.db`)
 2. 의존성 설치: `pip install -r requirements.txt`
-3. 테이블 생성: `python app/create_tables.py`
+3. 테이블 생성: `python3 app/create_tables.py`
 4. 서버 실행: `uvicorn app.main:app --reload --port 8080`
 
 ## 향후 과제
