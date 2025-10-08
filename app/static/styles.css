@@ -249,7 +249,8 @@ main.memorize-layout .panel {
 }
 
 .term-cell .value-text {
-  font-weight: 600;
+  font-weight: 700;
+  color: #111827;
 }
 
 .value-text {
@@ -583,13 +584,30 @@ thead th {
 }
 
 tbody td {
-  padding: 0.55rem 0.6rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.9);
   vertical-align: top;
+  transition: background-color 0.2s ease;
 }
 
 tbody tr:hover {
   background: rgba(148, 163, 184, 0.12);
+}
+
+.memorize-table tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.memorize-table tbody tr:nth-child(even) td {
+  background: rgba(241, 245, 249, 0.85);
+}
+
+.memorize-table tbody tr + tr td {
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.memorize-table tbody tr:hover td {
+  background: rgba(59, 130, 246, 0.12);
 }
 
 .grid {
@@ -785,14 +803,16 @@ tbody tr:hover {
 
 .quiz-question h3 {
   margin: 0;
-  font-size: 1.1rem;
-  color: #1e1f24;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: #111827;
 }
 
 .quiz-reading {
   margin: 0;
-  font-size: 0.9rem;
-  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #475569;
 }
 
 .quiz-actions {
@@ -991,5 +1011,20 @@ tbody tr:hover {
 
   .panel {
     min-height: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .memorize-table tbody td {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .memorize-table .term-cell .value-text {
+    font-size: 1.08rem;
+    letter-spacing: 0.01em;
+  }
+
+  .memorize-table .meaning-cell .value-text {
+    font-size: 1.02rem;
   }
 }
