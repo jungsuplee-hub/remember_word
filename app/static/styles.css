@@ -26,6 +26,22 @@ header {
   flex-wrap: wrap;
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 0.5rem;
+  box-sizing: border-box;
+  object-fit: contain;
+}
+
 .header-actions {
   display: flex;
   flex-wrap: wrap;

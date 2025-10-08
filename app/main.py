@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+IMAGES_DIR = BASE_DIR / "images"
 
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
@@ -18,6 +19,9 @@ app = FastAPI(title="Remember Word", version="1.0")
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+if IMAGES_DIR.exists():
+    app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 
 ensure_schema()
