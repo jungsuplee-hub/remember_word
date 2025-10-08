@@ -627,25 +627,58 @@ tbody tr:hover {
   gap: 0.75rem;
 }
 
+.group-select-header #exam-groups-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
 .group-select-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-#exam-groups {
+.group-checkbox-list {
   min-height: 9rem;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.6);
   background: rgba(255, 255, 255, 0.9);
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
 }
 
-#exam-groups:focus {
+.group-checkbox-list:focus-within {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-  outline: none;
+}
+
+.group-checkbox-list.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.group-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+
+.group-checkbox-item input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.group-placeholder {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
 .group-select-block .form-description {

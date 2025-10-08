@@ -16,7 +16,7 @@ const state = {
 
 const toast = document.querySelector('#toast');
 const folderSelect = document.querySelector('#exam-folder');
-const groupsSelect = document.querySelector('#exam-groups');
+const groupsContainer = document.querySelector('#exam-groups');
 const selectAllBtn = document.querySelector('#exam-select-all');
 const clearSelectionBtn = document.querySelector('#exam-clear-selection');
 const subtitle = document.querySelector('#exam-subtitle');
@@ -81,37 +81,50 @@ function updateGroupActionButtons() {
   const disabled = !state.activeFolderId || state.groups.length === 0;
   selectAllBtn.disabled = disabled;
   clearSelectionBtn.disabled = disabled;
-  groupsSelect.disabled = disabled;
+  if (disabled) {
+    groupsContainer.setAttribute('aria-disabled', 'true');
+    groupsContainer.classList.add('is-disabled');
+  } else {
+    groupsContainer.removeAttribute('aria-disabled');
+    groupsContainer.classList.remove('is-disabled');
+  }
 }
 
 function renderGroups() {
-  groupsSelect.innerHTML = '';
+  groupsContainer.innerHTML = '';
   if (!state.activeFolderId) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = '폴더를 먼저 선택하세요.';
-    option.disabled = true;
-    groupsSelect.appendChild(option);
+    const message = document.createElement('p');
+    message.className = 'group-placeholder';
+    message.textContent = '폴더를 먼저 선택하세요.';
+    groupsContainer.appendChild(message);
     updateGroupActionButtons();
     return;
   }
 
   if (state.groups.length === 0) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = '선택할 그룹이 없습니다.';
-    option.disabled = true;
-    groupsSelect.appendChild(option);
+    const message = document.createElement('p');
+    message.className = 'group-placeholder';
+    message.textContent = '선택할 그룹이 없습니다.';
+    groupsContainer.appendChild(message);
     updateGroupActionButtons();
     return;
   }
 
   state.groups.forEach((group) => {
-    const option = document.createElement('option');
-    option.value = group.id;
-    option.textContent = group.name;
-    option.selected = state.selectedGroupIds.includes(group.id);
-    groupsSelect.appendChild(option);
+    const label = document.createElement('label');
+    label.className = 'group-checkbox-item';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = group.id;
+    input.checked = state.selectedGroupIds.includes(group.id);
+
+    const text = document.createElement('span');
+    text.textContent = group.name;
+
+    label.appendChild(input);
+    label.appendChild(text);
+    groupsContainer.appendChild(label);
   });
 
   updateGroupActionButtons();
@@ -434,7 +447,10 @@ function handleGroupSelectionChange() {
   if (!state.groups.length) {
     state.selectedGroupIds = [];
   } else {
-    state.selectedGroupIds = Array.from(groupsSelect.selectedOptions).map((option) => Number(option.value));
+    const checkboxes = groupsContainer.querySelectorAll('input[type="checkbox"]');
+    state.selectedGroupIds = Array.from(checkboxes)
+      .filter((checkbox) => checkbox.checked)
+      .map((checkbox) => Number(checkbox.value));
   }
   updateSubtitle();
 }
@@ -491,16 +507,6 @@ function handlePreviewKeyUp(event) {
   }
 }
 
-function updateGroupSelectionUI() {
-  Array.from(groupsSelect.options).forEach((option) => {
-    if (!option.value) {
-      option.selected = false;
-      return;
-    }
-    option.selected = state.selectedGroupIds.includes(Number(option.value));
-  });
-}
-
 function init() {
   form.addEventListener('submit', handleStart);
   memorizeFailBtn.addEventListener('click', () => submitResult(false));
@@ -508,10 +514,7 @@ function init() {
   retryBtn.addEventListener('click', handleRetry);
   resetBtn.addEventListener('click', handleReset);
   folderSelect.addEventListener('change', handleFolderChange);
-  groupsSelect.addEventListener('change', () => {
-    handleGroupSelectionChange();
-    updateGroupSelectionUI();
-  });
+  groupsContainer.addEventListener('change', handleGroupSelectionChange);
   selectAllBtn.addEventListener('click', handleSelectAllGroups);
   clearSelectionBtn.addEventListener('click', handleClearGroupSelection);
   previewBtn.addEventListener('pointerdown', handlePreviewPointerDown);
