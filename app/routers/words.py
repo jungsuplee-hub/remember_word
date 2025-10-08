@@ -55,6 +55,45 @@ def delete_word(word_id: int, db: Session = Depends(get_db)):
     if not word:
         raise HTTPException(404, "단어를 찾을 수 없습니다.")
 
+    related_questions = (
+        db.query(models.QuizQuestion)
+        .filter(models.QuizQuestion.word_id == word_id)
+        .all()
+    )
+
+    if related_questions:
+        session_adjustments: dict[int, dict[str, int]] = defaultdict(
+            lambda: {"total": 0, "answered": 0, "correct": 0}
+        )
+
+        for question in related_questions:
+            adjustments = session_adjustments[question.session_id]
+            adjustments["total"] += 1
+            if question.is_correct is not None:
+                adjustments["answered"] += 1
+                if question.is_correct:
+                    adjustments["correct"] += 1
+            db.delete(question)
+
+        if session_adjustments:
+            sessions = (
+                db.query(models.QuizSession)
+                .filter(models.QuizSession.id.in_(session_adjustments.keys()))
+                .all()
+            )
+
+            for session in sessions:
+                adjustments = session_adjustments[session.id]
+                session.total_questions = max(
+                    0, session.total_questions - adjustments["total"]
+                )
+                session.answered_questions = max(
+                    0, session.answered_questions - adjustments["answered"]
+                )
+                session.correct_questions = max(
+                    0, session.correct_questions - adjustments["correct"]
+                )
+
     db.delete(word)
     db.commit()
     return {"status": "deleted", "id": word_id}
