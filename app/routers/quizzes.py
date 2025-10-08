@@ -71,8 +71,8 @@ def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db))
         query = query.order_by(func.random())
     else:
         group_order = case(
+            *[(gid, idx) for idx, gid in enumerate(group_ids)],
             value=models.Word.group_id,
-            whens={gid: idx for idx, gid in enumerate(group_ids)},
         )
         query = query.order_by(group_order, models.Word.term)
 
