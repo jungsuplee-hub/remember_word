@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 from database import get_db
@@ -291,6 +291,16 @@ def retry_incorrect(session_id: int, payload: schemas.QuizRetryRequest | None = 
         direction=new_session.direction,
         questions=questions_out,
     )
+
+
+@router.delete("/{session_id}", status_code=204)
+def delete_session(session_id: int, db: Session = Depends(get_db)):
+    session = db.query(models.QuizSession).filter(models.QuizSession.id == session_id).one_or_none()
+    if not session:
+        raise HTTPException(404, "시험 세션을 찾을 수 없습니다.")
+    db.delete(session)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/history", response_model=list[schemas.QuizHistoryItem])

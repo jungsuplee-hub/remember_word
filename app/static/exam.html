@@ -96,34 +96,9 @@
           </div>
           <button type="submit">시험 시작</button>
         </form>
-
-        <div id="exam-content" class="quiz-content hidden">
-          <div id="exam-progress" class="quiz-progress"></div>
-
-          <div id="exam-question" class="quiz-question">
-            <h3 id="exam-prompt"></h3>
-            <p id="exam-reading" class="quiz-reading"></p>
-            <div class="quiz-actions">
-              <button type="button" id="exam-fail" class="danger">다시암기</button>
-              <button type="button" id="exam-success" class="primary">암기완료</button>
-              <button type="button" id="exam-preview" class="secondary">정답 미리보기</button>
-            </div>
-            <div id="exam-answer" class="quiz-correct hidden"></div>
-          </div>
-
-          <div id="exam-summary" class="quiz-summary hidden">
-            <div class="exam-summary-header">
-              <h3>시험 결과</h3>
-              <span id="exam-summary-badge" class="badge hidden">Pass</span>
-            </div>
-            <p id="exam-summary-score" class="exam-summary-score hidden"></p>
-            <p id="exam-summary-text"></p>
-            <div class="quiz-summary-actions">
-              <button type="button" id="exam-retry" class="secondary">틀린 문제 다시 풀기</button>
-              <button type="button" id="exam-reset">새 시험 준비</button>
-            </div>
-          </div>
-        </div>
+        <p class="exam-session-note">
+          시험 시작을 누르면 새로운 시험 페이지가 열립니다. 시험이 끝나거나 중단하면 이 화면으로 돌아옵니다.
+        </p>
       </section>
 
       <aside class="panel exam-history-panel">
@@ -142,21 +117,6 @@
     </main>
 
     <div id="toast" role="status" aria-live="polite"></div>
-
-    <div
-      id="exam-result-modal"
-      class="modal hidden"
-      role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="exam-result-title"
-      aria-describedby="exam-result-message"
-    >
-      <div class="modal-card">
-        <h3 id="exam-result-title" class="modal-title">시험 결과</h3>
-        <p id="exam-result-message" class="modal-message"></p>
-        <button type="button" id="exam-result-close" class="modal-close">확인</button>
-      </div>
-    </div>
 
     <script src="/static/exam.js" defer></script>
   </body>
