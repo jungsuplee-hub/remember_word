@@ -11,16 +11,18 @@
   <body data-guide-page="market">
     <header>
       <div class="header-content">
-        <div class="header-brand">
-          <a href="/static/index.html" class="header-logo-link" aria-label="단어 관리로 이동">
-            <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="header-logo" />
-          </a>
-          <div>
+        <a href="/static/index.html" class="header-logo-link" aria-label="단어 관리로 이동">
+          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="header-logo" />
+        </a>
+        <div class="header-main">
+          <div class="header-top">
             <h1>단어 마켓</h1>
-            <p>관리자가 공유한 단어장을 내 계정으로 가져오세요.</p>
+            <div class="user-meta">
+              <span id="user-greeting" class="user-greeting"></span>
+              <button id="logout-button" class="link-button danger">로그아웃</button>
+            </div>
           </div>
-        </div>
-        <div class="header-actions">
+          <p class="header-description">관리자가 공유한 단어장을 내 계정으로 가져오세요.</p>
           <div class="header-links">
             <a href="/static/index.html" class="link-button">단어 관리</a>
             <a href="/static/memorize.html" class="link-button">단어 암기</a>
@@ -40,10 +42,6 @@
             >
               관리자
             </a>
-          </div>
-          <div class="user-meta">
-            <span id="user-greeting" class="user-greeting"></span>
-            <button id="logout-button" class="link-button danger">로그아웃</button>
           </div>
         </div>
       </div>
