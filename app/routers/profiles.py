@@ -1,14 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
 from database import get_db
-import models, schemas
+import models
+import schemas
+from utils.auth import require_admin
 
 router = APIRouter()
 
 
 @router.post("", response_model=schemas.ProfileOut)
-def create_profile(payload: schemas.ProfileCreate, db: Session = Depends(get_db)):
+def create_profile(
+    payload: schemas.ProfileCreate,
+    db: Session = Depends(get_db),
+    _: models.Profile = Depends(require_admin),
+):
     profile = models.Profile(name=payload.name, email=payload.email)
     db.add(profile)
     try:
@@ -21,12 +28,19 @@ def create_profile(payload: schemas.ProfileCreate, db: Session = Depends(get_db)
 
 
 @router.get("", response_model=list[schemas.ProfileOut])
-def list_profiles(db: Session = Depends(get_db)):
+def list_profiles(
+    db: Session = Depends(get_db),
+    _: models.Profile = Depends(require_admin),
+):
     return db.query(models.Profile).order_by(models.Profile.created_at).all()
 
 
 @router.get("/{profile_id}", response_model=schemas.ProfileOut)
-def get_profile(profile_id: int, db: Session = Depends(get_db)):
+def get_profile(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: models.Profile = Depends(require_admin),
+):
     profile = db.query(models.Profile).filter(models.Profile.id == profile_id).one_or_none()
     if not profile:
         raise HTTPException(404, "프로필을 찾을 수 없습니다.")
@@ -34,7 +48,12 @@ def get_profile(profile_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/{profile_id}", response_model=schemas.ProfileOut)
-def update_profile(profile_id: int, payload: schemas.ProfileCreate, db: Session = Depends(get_db)):
+def update_profile(
+    profile_id: int,
+    payload: schemas.ProfileCreate,
+    db: Session = Depends(get_db),
+    _: models.Profile = Depends(require_admin),
+):
     profile = db.query(models.Profile).filter(models.Profile.id == profile_id).one_or_none()
     if not profile:
         raise HTTPException(404, "프로필을 찾을 수 없습니다.")
@@ -50,7 +69,11 @@ def update_profile(profile_id: int, payload: schemas.ProfileCreate, db: Session 
 
 
 @router.delete("/{profile_id}", response_model=dict)
-def delete_profile(profile_id: int, db: Session = Depends(get_db)):
+def delete_profile(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: models.Profile = Depends(require_admin),
+):
     profile = db.query(models.Profile).filter(models.Profile.id == profile_id).one_or_none()
     if not profile:
         raise HTTPException(404, "프로필을 찾을 수 없습니다.")

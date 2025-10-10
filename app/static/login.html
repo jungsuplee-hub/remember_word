@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remember Word - 로그인</title>
+    <link rel="icon" type="image/x-icon" href="/images/remember_word_log.ico" />
+    <link rel="icon" type="image/png" href="/images/remember_word_log.png" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body data-public="true" class="auth-page">
+    <main class="auth-container">
+      <section class="auth-card">
+        <div class="auth-card-header">
+          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="auth-logo" />
+          <h1>Remember Word 로그인</h1>
+        </div>
+        <form id="login-form" class="auth-form">
+          <label>
+            아이디
+            <input type="text" name="username" autocomplete="username" required />
+          </label>
+          <label>
+            비밀번호
+            <input type="password" name="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit" class="primary">로그인</button>
+        </form>
+        <p id="login-feedback" class="auth-feedback" role="alert"></p>
+      </section>
+
+      <section class="auth-card">
+        <h2>비밀번호를 잊으셨나요?</h2>
+        <form id="reset-request-form" class="auth-form">
+          <label>
+            가입 이메일
+            <input type="email" name="email" autocomplete="email" required />
+          </label>
+          <button type="submit" class="secondary">재설정 링크 보내기</button>
+        </form>
+        <p class="auth-hint">테스트 환경에서는 서버 로그에 재설정 토큰이 출력됩니다.</p>
+        <p id="reset-request-feedback" class="auth-feedback" role="status"></p>
+      </section>
+
+      <section class="auth-card">
+        <h2>토큰으로 비밀번호 재설정</h2>
+        <form id="reset-confirm-form" class="auth-form">
+          <label>
+            이메일로 받은 토큰
+            <input type="text" name="token" required />
+          </label>
+          <label>
+            새 비밀번호
+            <input type="password" name="new_password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <button type="submit" class="secondary">비밀번호 재설정</button>
+        </form>
+        <p id="reset-confirm-feedback" class="auth-feedback" role="status"></p>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script src="/static/login.js" defer></script>
+  </body>
+</html>

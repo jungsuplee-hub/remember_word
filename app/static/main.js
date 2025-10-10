@@ -17,6 +17,32 @@ const minStarSelect = document.querySelector('#word-min-star');
 const importForm = document.querySelector('#import-form');
 const importFileInput = document.querySelector('#import-file');
 const importLanguageInput = document.querySelector('#import-language');
+const userGreeting = document.querySelector('#user-greeting');
+const adminLink = document.querySelector('#admin-link');
+const logoutButton = document.querySelector('#logout-button');
+const passwordLink = document.querySelector('#password-link');
+
+function updateUserMenu(user) {
+  if (!user) return;
+  if (userGreeting) {
+    userGreeting.textContent = `${user.name}님`; 
+  }
+  if (adminLink) {
+    adminLink.hidden = !user.is_admin;
+  }
+  if (passwordLink) {
+    passwordLink.hidden = false;
+  }
+}
+
+Session.subscribe(updateUserMenu);
+
+if (logoutButton) {
+  logoutButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    Session.logout();
+  });
+}
 
 function showToast(message, type = 'info') {
   toast.textContent = message;
@@ -610,7 +636,8 @@ function handleGroupListClick(event) {
   }
 }
 
-function init() {
+async function init() {
+  await Session.ensureAuthenticated();
   document.querySelector('#folder-form').addEventListener('submit', handleFolderSubmit);
   document.querySelector('#group-form').addEventListener('submit', handleGroupSubmit);
   document.querySelector('#word-form').addEventListener('submit', handleWordSubmit);
@@ -629,4 +656,9 @@ function init() {
   fetchFolders();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init().catch((error) => {
+    console.error(error);
+    showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
+  });
+});

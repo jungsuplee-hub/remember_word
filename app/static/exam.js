@@ -20,6 +20,32 @@ const historyEmpty = document.querySelector('#exam-history-empty');
 const historyRefreshBtn = document.querySelector('#exam-history-refresh');
 const historyEmptyDefaultText = historyEmpty ? historyEmpty.textContent : '아직 시험 이력이 없습니다.';
 let historyLoading = false;
+const userGreeting = document.querySelector('#user-greeting');
+const adminLink = document.querySelector('#admin-link');
+const logoutButton = document.querySelector('#logout-button');
+const passwordLink = document.querySelector('#password-link');
+
+function updateUserMenu(user) {
+  if (!user) return;
+  if (userGreeting) {
+    userGreeting.textContent = `${user.name}님`;
+  }
+  if (adminLink) {
+    adminLink.hidden = !user.is_admin;
+  }
+  if (passwordLink) {
+    passwordLink.hidden = false;
+  }
+}
+
+Session.subscribe(updateUserMenu);
+
+if (logoutButton) {
+  logoutButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    Session.logout();
+  });
+}
 
 function showToast(message, type = 'info') {
   if (!toast) return;
@@ -486,7 +512,8 @@ async function fetchHistory(options = {}) {
   }
 }
 
-function init() {
+async function init() {
+  await Session.ensureAuthenticated();
   if (form) {
     form.addEventListener('submit', handleStart);
   }
@@ -509,13 +536,21 @@ function init() {
   if (returnMessage) {
     showToast(returnMessage);
   }
-  fetchFolders();
-  fetchHistory();
+  await fetchFolders();
+  await fetchHistory();
   updateSubtitle();
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => {
+    init().catch((error) => {
+      console.error(error);
+      showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
+    });
+  });
 } else {
-  init();
+  init().catch((error) => {
+    console.error(error);
+    showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
+  });
 }
