@@ -24,6 +24,23 @@
 3. 테이블 생성: `python3 app/create_tables.py`
 4. 서버 실행: `uvicorn app.main:app --reload --port 8080`
 
+### 이메일 전송 설정
+
+비밀번호 재설정 안내 메일을 전송하려면 SMTP 관련 환경 변수를 설정해야 합니다. 예시는 다음과 같습니다.
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=example@gmail.com
+SMTP_PASSWORD=your_app_password
+SMTP_FROM=example@gmail.com        # 선택: 발신 주소를 사용자와 다르게 지정하려면 설정
+SMTP_FROM_NAME=Remember Word 팀     # 선택: 발신자 이름 설정
+SMTP_STARTTLS=true                 # 기본값 true, 필요 시 false로 비활성화
+APP_BASE_URL=https://remember-word.example.com
+```
+
+Gmail을 사용할 경우 `SMTP_HOST`/`SMTP_PORT`를 비워두면 자동으로 `smtp.gmail.com:587`을 사용합니다. `APP_BASE_URL`은 메일 본문에서 안내 페이지 링크를 생성하는 데 사용됩니다.
+
 ### 소셜 로그인 연동
 
 Google, Kakao, Naver 간편 로그인을 사용하려면 아래 환경 변수를 추가로 설정해야 합니다.
