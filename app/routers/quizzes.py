@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import func, case
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
@@ -84,27 +84,50 @@ def start_quiz(
 
     primary_group_id = payload.group_id or group_ids[0]
 
+    if (payload.number_start is not None or payload.number_end is not None) and len(group_ids) != 1:
+        raise HTTPException(400, "번호 범위는 하나의 그룹을 선택했을 때만 사용할 수 있습니다.")
+
     query = db.query(models.Word).filter(models.Word.group_id.in_(group_ids))
     if payload.min_star is not None:
         query = query.filter(models.Word.star >= payload.min_star)
     if payload.star_values:
         query = query.filter(models.Word.star.in_(payload.star_values))
 
-    if payload.random:
-        query = query.order_by(func.random())
-    else:
+    if len(group_ids) > 1:
         group_order = case(
             *[(gid, idx) for idx, gid in enumerate(group_ids)],
             value=models.Word.group_id,
         )
-        query = query.order_by(group_order, models.Word.term)
-
-    if payload.limit:
-        query = query.limit(payload.limit)
+        query = query.order_by(group_order, models.Word.id)
+    else:
+        query = query.order_by(models.Word.id)
 
     words = query.all()
     if not words:
         raise HTTPException(400, "선택한 조건에 해당하는 단어가 없습니다.")
+
+    if payload.number_start is not None or payload.number_end is not None:
+        total = len(words)
+        start_number = payload.number_start or 1
+        end_number = payload.number_end or total
+
+        if start_number > total:
+            raise HTTPException(400, f"시작 번호가 단어 수를 초과했습니다. (총 {total}개)")
+
+        end_number = min(end_number, total)
+
+        if start_number > end_number:
+            raise HTTPException(400, "시작 번호는 끝 번호보다 작거나 같아야 합니다.")
+
+        words = words[start_number - 1 : end_number]
+        if not words:
+            raise HTTPException(400, "선택한 번호 범위에 해당하는 단어가 없습니다.")
+
+    if payload.random:
+        random.shuffle(words)
+
+    if payload.limit:
+        words = words[: payload.limit]
 
     session = models.QuizSession(
         profile_id=current_user.id,

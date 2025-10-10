@@ -163,21 +163,22 @@ function renderGroups() {
 function renderWords() {
   wordTable.innerHTML = '';
   if (!state.activeGroupId) {
-    wordTable.innerHTML = '<tr><td colspan="4">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
+    wordTable.innerHTML = '<tr><td colspan="5">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
     state.words = [];
     updateCounts();
     return;
   }
   if (state.words.length === 0) {
-    wordTable.innerHTML = '<tr><td colspan="4">등록된 단어가 없습니다.</td></tr>';
+    wordTable.innerHTML = '<tr><td colspan="5">등록된 단어가 없습니다.</td></tr>';
     updateCounts();
     return;
   }
 
-  state.words.forEach((word) => {
+  state.words.forEach((word, index) => {
     const tr = document.createElement('tr');
     tr.dataset.id = word.id;
     tr.innerHTML = `
+      <td class="word-number">${index + 1}</td>
       <td>${word.term}</td>
       <td>${word.meaning}</td>
       <td>

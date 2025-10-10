@@ -131,6 +131,16 @@ class QuizStartRequest(BaseModel):
     mode: Literal["study", "exam"] = "exam"
     min_star: Optional[int] = Field(default=None, ge=0, le=MAX_STAR_RATING, description="별 최소 점수")
     star_values: Optional[List[int]] = Field(default=None, description="선택한 별 값 목록")
+    number_start: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description="선택한 그룹에서 시작할 단어 번호 (1부터 시작)",
+    )
+    number_end: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description="선택한 그룹에서 종료할 단어 번호",
+    )
 
     @root_validator(pre=True)
     def validate_groups(cls, values):
@@ -169,6 +179,27 @@ class QuizStartRequest(BaseModel):
 
         values["group_ids"] = deduped
         values["group_id"] = deduped[0]
+        return values
+
+    @root_validator(skip_on_failure=True)
+    def validate_number_range(cls, values):
+        start = values.get("number_start")
+        end = values.get("number_end")
+
+        if start is None and end is None:
+            return values
+
+        if start is not None and start <= 0:
+            raise ValueError("번호 범위는 1 이상의 값이어야 합니다.")
+        if end is not None and end <= 0:
+            raise ValueError("번호 범위는 1 이상의 값이어야 합니다.")
+
+        normalized_start = start or 1
+        normalized_end = end or normalized_start
+
+        if normalized_start > normalized_end:
+            raise ValueError("시작 번호는 끝 번호보다 클 수 없습니다.")
+
         return values
 
 

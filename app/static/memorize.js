@@ -9,6 +9,8 @@ const state = {
   peekTerm: new Set(),
   peekMeaning: new Set(),
   audioLanguage: 'auto',
+  rangeStart: null,
+  rangeEnd: null,
 };
 
 const toast = document.querySelector('#toast');
@@ -19,6 +21,10 @@ const tableBody = document.querySelector('#memorize-word-table');
 const tableContainer = document.querySelector('#memorize-table-container');
 const toggleTermBtn = document.querySelector('#toggle-term');
 const toggleMeaningBtn = document.querySelector('#toggle-meaning');
+const rangeForm = document.querySelector('#memorize-range-form');
+const rangeStartInput = document.querySelector('#memorize-range-start');
+const rangeEndInput = document.querySelector('#memorize-range-end');
+const rangeSubmitButton = rangeForm?.querySelector('button[type="submit"]') || null;
 const audioLanguageInputs = document.querySelectorAll("input[name='audio-language']");
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
@@ -318,7 +324,129 @@ function updateSubtitle() {
     return;
   }
 
-  subtitle.textContent = `총 ${state.words.length}개의 단어`;
+  const total = state.words.length;
+  if (!total) {
+    subtitle.textContent = '등록된 단어가 없습니다.';
+    return;
+  }
+
+  const { startNumber, endNumber, visibleCount, hasFilter } = computeVisibleRange(total);
+  if (!hasFilter || visibleCount === total) {
+    subtitle.textContent = `총 ${total}개의 단어`;
+    return;
+  }
+
+  const rangeText = startNumber === endNumber ? `${startNumber}번` : `${startNumber}번~${endNumber}번`;
+  subtitle.textContent = `총 ${total}개의 단어 (현재 ${rangeText} · ${visibleCount}개 표시)`;
+}
+
+function computeVisibleRange(total) {
+  if (!total) {
+    return {
+      startNumber: 1,
+      endNumber: 0,
+      startIndex: 0,
+      endIndex: 0,
+      visibleCount: 0,
+      hasFilter: false,
+    };
+  }
+
+  const hasStart = Number.isInteger(state.rangeStart);
+  const hasEnd = Number.isInteger(state.rangeEnd);
+
+  let startNumber = hasStart ? state.rangeStart : 1;
+  let endNumber = hasEnd ? state.rangeEnd : total;
+
+  startNumber = Math.max(1, Math.min(startNumber || 1, total));
+  endNumber = Math.max(1, Math.min(endNumber || total, total));
+
+  if (startNumber > endNumber) {
+    [startNumber, endNumber] = [1, total];
+  }
+
+  const startIndex = startNumber - 1;
+  const endIndex = endNumber;
+  const visibleCount = Math.max(0, endIndex - startIndex);
+
+  return {
+    startNumber,
+    endNumber,
+    startIndex,
+    endIndex,
+    visibleCount,
+    hasFilter: hasStart || hasEnd,
+  };
+}
+
+function updateRangeInputs() {
+  if (rangeStartInput) {
+    rangeStartInput.value = state.rangeStart != null ? String(state.rangeStart) : '';
+  }
+  if (rangeEndInput) {
+    rangeEndInput.value = state.rangeEnd != null ? String(state.rangeEnd) : '';
+  }
+}
+
+function updateRangeControls() {
+  if (!rangeForm) return;
+  const enabled = Boolean(state.activeGroupId) && state.words.length > 0;
+  const elements = [rangeStartInput, rangeEndInput, rangeSubmitButton].filter(Boolean);
+
+  if (enabled) {
+    rangeForm.removeAttribute('aria-disabled');
+  } else {
+    rangeForm.setAttribute('aria-disabled', 'true');
+  }
+
+  elements.forEach((element) => {
+    element.disabled = !enabled;
+  });
+}
+
+function resetRangeState() {
+  state.rangeStart = null;
+  state.rangeEnd = null;
+  updateRangeInputs();
+}
+
+function ensureRangeWithinBounds() {
+  if (!state.words.length) {
+    resetRangeState();
+    return;
+  }
+
+  const total = state.words.length;
+  let changed = false;
+
+  if (state.rangeStart != null) {
+    if (!Number.isInteger(state.rangeStart) || state.rangeStart < 1) {
+      state.rangeStart = 1;
+      changed = true;
+    } else if (state.rangeStart > total) {
+      state.rangeStart = total;
+      changed = true;
+    }
+  }
+
+  if (state.rangeEnd != null) {
+    if (!Number.isInteger(state.rangeEnd) || state.rangeEnd < 1) {
+      state.rangeEnd = total;
+      changed = true;
+    } else if (state.rangeEnd > total) {
+      state.rangeEnd = total;
+      changed = true;
+    }
+  }
+
+  if (state.rangeStart != null && state.rangeEnd != null && state.rangeStart > state.rangeEnd) {
+    state.rangeEnd = state.rangeStart;
+    changed = true;
+  }
+
+  if (changed) {
+    updateRangeInputs();
+  }
 }
 
 function createCell({ text, hiddenLabel, type, reading }) {
@@ -361,35 +489,61 @@ function renderWords() {
   if (!state.activeGroupId) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 2;
+    cell.colSpan = 3;
     cell.className = 'empty';
     cell.textContent = '그룹을 선택하면 단어가 표시됩니다.';
     row.appendChild(cell);
     tableBody.appendChild(row);
     updateSubtitle();
-    updateToggleButtons();
+    updateToggleButtons(0);
+    updateRangeControls();
     return;
   }
 
   if (state.words.length === 0) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 2;
+    cell.colSpan = 3;
     cell.className = 'empty';
     cell.textContent = '등록된 단어가 없습니다.';
     row.appendChild(cell);
     tableBody.appendChild(row);
+    resetRangeState();
     updateSubtitle();
-    updateToggleButtons();
+    updateToggleButtons(0);
+    updateRangeControls();
     return;
   }
 
-  state.words.forEach((word) => {
+  ensureRangeWithinBounds();
+  const total = state.words.length;
+  const { startIndex, endIndex, visibleCount } = computeVisibleRange(total);
+  const visibleWords = state.words.slice(startIndex, endIndex);
+
+  if (!visibleWords.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 3;
+    cell.className = 'empty';
+    cell.textContent = '해당 범위에 단어가 없습니다.';
+    row.appendChild(cell);
+    tableBody.appendChild(row);
+    updateSubtitle();
+    updateToggleButtons(0);
+    updateRangeControls();
+    return;
+  }
+
+  visibleWords.forEach((word, index) => {
     const row = document.createElement('tr');
     row.dataset.id = word.id;
 
     if (state.peekTerm.has(word.id)) row.classList.add('peek-term');
     if (state.peekMeaning.has(word.id)) row.classList.add('peek-meaning');
+
+    const numberCell = document.createElement('td');
+    numberCell.className = 'word-number';
+    numberCell.textContent = String(startIndex + index + 1);
 
     const termCell = createCell({
       text: word.term,
@@ -404,6 +558,7 @@ function renderWords() {
       type: 'meaning',
     });
 
+    row.appendChild(numberCell);
     row.appendChild(termCell);
     row.appendChild(meaningCell);
 
@@ -413,11 +568,12 @@ function renderWords() {
 
   updateAllAudioButtonsAria();
   updateSubtitle();
-  updateToggleButtons();
+  updateToggleButtons(visibleCount);
+  updateRangeControls();
 }
 
-function updateToggleButtons() {
-  const hasWords = state.words.length > 0;
+function updateToggleButtons(visibleCount = state.words.length) {
+  const hasWords = visibleCount > 0;
   toggleTermBtn.disabled = !hasWords;
   toggleMeaningBtn.disabled = !hasWords;
 
@@ -494,6 +650,8 @@ async function fetchWords() {
     state.peekTerm.clear();
     state.peekMeaning.clear();
     state.words = await api(`/words?group_id=${state.activeGroupId}`);
+    ensureRangeWithinBounds();
+    updateRangeInputs();
     renderWords();
   } catch (error) {
     showToast(error.message, 'error');
@@ -508,6 +666,7 @@ folderSelect.addEventListener('change', () => {
   state.words = [];
   state.hideTerm = false;
   state.hideMeaning = false;
+  resetRangeState();
   resetPeekStates();
   renderGroups();
   renderWords();
@@ -522,6 +681,7 @@ groupSelect.addEventListener('change', () => {
   state.words = [];
   state.hideTerm = false;
   state.hideMeaning = false;
+  resetRangeState();
   resetPeekStates();
   renderWords();
   if (state.activeGroupId) {
@@ -673,6 +833,69 @@ toggleMeaningBtn.addEventListener('click', () => {
   }
   renderWords();
 });
+
+if (rangeForm) {
+  rangeForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!state.activeGroupId) {
+      return;
+    }
+    if (!state.words.length) {
+      showToast('먼저 단어를 불러오세요.', 'error');
+      return;
+    }
+
+    const total = state.words.length;
+    const rawStart = rangeStartInput?.value.trim() ?? '';
+    const rawEnd = rangeEndInput?.value.trim() ?? '';
+
+    const startValue = rawStart ? Number(rawStart) : null;
+    const endValue = rawEnd ? Number(rawEnd) : null;
+
+    const isValidNumber = (value) => Number.isInteger(value) && value > 0;
+
+    if (rawStart && !isValidNumber(startValue)) {
+      showToast('시작 번호는 1 이상의 정수로 입력하세요.', 'error');
+      return;
+    }
+    if (rawEnd && !isValidNumber(endValue)) {
+      showToast('끝 번호는 1 이상의 정수로 입력하세요.', 'error');
+      return;
+    }
+
+    if (startValue != null && startValue > total) {
+      showToast(`시작 번호는 총 ${total}개 이하로 입력하세요.`, 'error');
+      return;
+    }
+
+    if (endValue != null && endValue > total) {
+      showToast(`끝 번호는 총 ${total}개 이하로 입력하세요.`, 'error');
+      return;
+    }
+
+    const normalizedStart = startValue ?? 1;
+    const normalizedEnd = endValue ?? total;
+
+    if (normalizedStart > normalizedEnd) {
+      showToast('시작 번호는 끝 번호보다 클 수 없습니다.', 'error');
+      return;
+    }
+
+    state.rangeStart = startValue;
+    state.rangeEnd = endValue;
+    updateRangeInputs();
+    renderWords();
+
+    if (startValue == null && endValue == null) {
+      showToast('전체 단어가 표시됩니다.', 'info');
+    } else {
+      const rangeText = normalizedStart === normalizedEnd
+        ? `${normalizedStart}번`
+        : `${normalizedStart}번~${normalizedEnd}번`;
+      showToast(`${rangeText} 단어를 표시합니다.`, 'info');
+    }
+  });
+}
 
 Session.ensureAuthenticated()
   .then(() => fetchFolders())

@@ -53,7 +53,7 @@ def list_words(
         q = q.filter(models.Word.star >= min_star)
     if star_values:
         q = q.filter(models.Word.star.in_(star_values))
-    rows = q.order_by(models.Word.term).all()
+    rows = q.order_by(models.Word.id).all()
     return rows
 
 
