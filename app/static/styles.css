@@ -5,14 +5,21 @@
   color: #1e1f24;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background: linear-gradient(180deg, #f8f9fb 0%, #eaeef8 100%);
+  overflow-x: hidden;
 }
 
 header {
-  padding: 1.5rem 2rem;
+  padding: clamp(1.2rem, 4vw, 1.5rem) clamp(1.25rem, 6vw, 2rem);
   background: #243b53;
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -24,6 +31,8 @@ header {
   justify-content: space-between;
   gap: 1.25rem;
   flex-wrap: wrap;
+  margin: 0 auto;
+  width: min(100%, 1120px);
 }
 
 .header-brand {
@@ -80,7 +89,7 @@ header p {
 main {
   display: grid;
   gap: 1.5rem;
-  padding: 1.5rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
   grid-template-columns: repeat(2, minmax(320px, 1fr));
   grid-template-areas:
     "folders words"
@@ -89,6 +98,7 @@ main {
   align-items: start;
   min-height: calc(100vh - 6rem);
   max-width: 1200px;
+  width: min(100%, 1200px);
   margin: 0 auto;
 }
 
@@ -97,10 +107,10 @@ main.exam-layout {
   grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
   align-items: flex-start;
   gap: 1.5rem;
-  padding: 2.5rem 1.5rem 3rem;
+  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1rem, 4vw, 1.5rem) clamp(2.25rem, 5vw, 3rem);
   max-width: 1180px;
   margin: 0 auto;
-  width: 100%;
+  width: min(100%, 1180px);
 }
 
 main.exam-layout .panel {
@@ -110,10 +120,10 @@ main.exam-layout .panel {
 main.exam-session-layout {
   display: flex;
   justify-content: center;
-  padding: 2.5rem 1.5rem 3rem;
+  padding: clamp(1.75rem, 5vw, 2.5rem) clamp(1rem, 6vw, 1.75rem) clamp(2rem, 6vw, 3rem);
   max-width: 880px;
   margin: 0 auto;
-  width: 100%;
+  width: min(100%, 880px);
 }
 
 main.exam-session-layout .panel {
@@ -1330,6 +1340,14 @@ tbody tr:hover {
 @media (max-width: 640px) {
   .memorize-table tbody td {
     padding: 0.8rem 0.9rem;
+  }
+
+  #toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    width: auto;
+    max-width: calc(100% - 2rem);
   }
 
   .memorize-table .term-cell .value-text {
