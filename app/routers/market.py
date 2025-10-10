@@ -18,15 +18,25 @@ from utils.sorting import korean_alnum_sort_key
 router = APIRouter()
 
 
+LANGUAGE_RENAMES = {
+    "대한검정회 한자": "기본언어 한자",
+}
+
+
 def _normalize(value: str | None) -> str:
     if value is None:
         return ""
     return value.strip()
 
 
-def _language_key(value: str | None) -> str:
+def _rename_language(value: str | None) -> str:
     normalized = _normalize(value)
-    return normalized or "기본"
+    return LANGUAGE_RENAMES.get(normalized, normalized)
+
+
+def _language_key(value: str | None) -> str:
+    renamed = _rename_language(value)
+    return renamed or "기본"
 
 
 @router.get("/languages", response_model=list[schemas.MarketLanguageSummary])
@@ -92,7 +102,7 @@ def list_folders(
             schemas.MarketFolderOut(
                 id=folder.id,
                 name=folder.name,
-                default_language=folder.default_language,
+                default_language=_rename_language(folder.default_language) or None,
                 group_count=int(group_count or 0),
             )
         )
@@ -282,7 +292,7 @@ def import_groups(
     return schemas.MarketImportSummary(
         folder_id=target_folder.id,
         folder_name=target_folder.name,
-        default_language=target_folder.default_language,
+        default_language=_rename_language(target_folder.default_language) or None,
         created_groups=created_groups,
         updated_groups=updated_groups,
         imported_words=imported_words,
