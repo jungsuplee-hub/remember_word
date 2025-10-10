@@ -518,6 +518,16 @@ main.import-layout {
   .market-panel {
     min-height: 0;
   }
+
+  .market-group-toolbar {
+    padding: 0.55rem 1.1rem;
+    gap: 0.6rem;
+  }
+
+  .market-group-list {
+    padding: 0.85rem 1.1rem 1.1rem;
+    gap: 0.7rem;
+  }
 }
 
 main.exam-session-layout {
