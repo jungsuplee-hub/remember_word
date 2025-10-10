@@ -361,7 +361,7 @@ main.import-layout {
   padding: 0 1.75rem 1.5rem;
 }
 
-.market-panel {
+.panel.market-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -500,6 +500,7 @@ main.import-layout {
   .market-group-toolbar .form-description {
     margin: 0;
     text-align: left;
+    flex: 0 0 auto;
   }
 
   .market-bulk-actions {
@@ -521,7 +522,7 @@ main.import-layout {
 }
 
 @media (max-width: 600px) {
-  .market-panel {
+  .panel.market-panel {
     min-height: 0;
   }
 
