@@ -16,6 +16,8 @@ const selectionSummary = document.querySelector('#market-selection-summary');
 const folderCount = document.querySelector('#market-folder-count');
 const groupCount = document.querySelector('#market-group-count');
 const refreshButton = document.querySelector('#market-refresh');
+const selectAllButton = document.querySelector('#market-select-all');
+const clearAllButton = document.querySelector('#market-clear-all');
 const toast = document.querySelector('#toast');
 const logoutButton = document.querySelector('#logout-button');
 const accountLink = document.querySelector('#account-link');
@@ -191,6 +193,7 @@ function renderGroups() {
     state.groups = [];
     updateCounts();
     updateSelectionSummary();
+    updateBulkActionButtons();
     if (importButton) {
       importButton.disabled = true;
     }
@@ -204,6 +207,7 @@ function renderGroups() {
     groupContainer.appendChild(p);
     updateCounts();
     updateSelectionSummary();
+    updateBulkActionButtons();
     if (importButton) {
       importButton.disabled = true;
     }
@@ -228,6 +232,7 @@ function renderGroups() {
         state.selectedGroupIds.delete(groupId);
       }
       updateSelectionSummary();
+      updateBulkActionButtons();
     });
 
     const nameSpan = document.createElement('span');
@@ -246,6 +251,7 @@ function renderGroups() {
   });
   updateCounts();
   updateSelectionSummary();
+  updateBulkActionButtons();
 }
 
 function updateSelectionSummary() {
@@ -259,6 +265,7 @@ function updateSelectionSummary() {
     if (importButton) {
       importButton.disabled = true;
     }
+    updateBulkActionButtons();
     return;
   }
 
@@ -266,6 +273,42 @@ function updateSelectionSummary() {
   if (importButton) {
     importButton.disabled = false;
   }
+  updateBulkActionButtons();
+}
+
+function updateBulkActionButtons() {
+  if (selectAllButton) {
+    const hasUnselected = state.groups.some((group) => !state.selectedGroupIds.has(group.id));
+    selectAllButton.disabled = !hasUnselected;
+  }
+  if (clearAllButton) {
+    clearAllButton.disabled = state.selectedGroupIds.size === 0;
+  }
+}
+
+function syncGroupSelectionCheckboxes() {
+  if (!groupContainer) return;
+  const checkboxes = groupContainer.querySelectorAll('input[type="checkbox"]');
+  checkboxes.forEach((checkbox) => {
+    const groupId = Number(checkbox.value);
+    checkbox.checked = state.selectedGroupIds.has(groupId);
+  });
+}
+
+function selectAllGroups() {
+  if (state.groups.length === 0) return;
+  state.groups.forEach((group) => {
+    state.selectedGroupIds.add(group.id);
+  });
+  syncGroupSelectionCheckboxes();
+  updateSelectionSummary();
+}
+
+function clearAllGroups() {
+  if (state.selectedGroupIds.size === 0) return;
+  state.selectedGroupIds.clear();
+  syncGroupSelectionCheckboxes();
+  updateSelectionSummary();
 }
 
 async function fetchLanguages() {
@@ -403,6 +446,14 @@ async function init() {
 
   if (importButton) {
     importButton.addEventListener('click', handleImport);
+  }
+
+  if (selectAllButton) {
+    selectAllButton.addEventListener('click', selectAllGroups);
+  }
+
+  if (clearAllButton) {
+    clearAllButton.addEventListener('click', clearAllGroups);
   }
 
   await fetchLanguages();

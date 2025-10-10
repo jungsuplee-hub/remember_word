@@ -80,9 +80,15 @@
             <span class="count-badge" id="market-group-count">0</span>
           </h2>
         </div>
+        <div class="market-group-toolbar">
+          <div class="market-bulk-actions">
+            <button id="market-select-all" type="button" class="secondary">모두 선택</button>
+            <button id="market-clear-all" type="button" class="secondary">모두 해제</button>
+          </div>
+          <p id="market-selection-summary" class="form-description">가져올 그룹을 선택하세요.</p>
+        </div>
         <div id="market-groups" class="market-group-list" role="group" aria-labelledby="market-group-count"></div>
         <div class="market-actions">
-          <p id="market-selection-summary" class="form-description">가져올 그룹을 선택하세요.</p>
           <button id="market-import" type="button" disabled>선택한 그룹 가져오기</button>
         </div>
       </section>

@@ -179,6 +179,33 @@
       </section>
     </main>
 
+    <div
+      id="word-move-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="word-move-title"
+    >
+      <div class="modal-backdrop" data-dismiss="word-move"></div>
+      <form id="word-move-form" class="modal-content" role="document">
+        <h2 id="word-move-title">단어 이동</h2>
+        <p id="word-move-word" class="modal-caption"></p>
+        <p class="form-description">이동할 폴더와 그룹을 선택하세요.</p>
+        <label class="modal-field">
+          폴더
+          <select id="word-move-folder" required></select>
+        </label>
+        <label class="modal-field">
+          그룹
+          <select id="word-move-group" required disabled></select>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="word-move-cancel">취소</button>
+          <button type="submit" id="word-move-submit" disabled>이동</button>
+        </div>
+      </form>
+    </div>
+
     <div id="toast" role="status" aria-live="polite"></div>
 
     <script src="/static/auth.js" defer></script>

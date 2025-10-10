@@ -24,6 +24,17 @@ const accountLink = document.querySelector('#account-link');
 const folderCount = document.querySelector('#folder-count');
 const groupCount = document.querySelector('#group-count');
 const wordCount = document.querySelector('#word-count');
+const wordMoveDialog = document.querySelector('#word-move-dialog');
+const wordMoveForm = document.querySelector('#word-move-form');
+const wordMoveFolderSelect = document.querySelector('#word-move-folder');
+const wordMoveGroupSelect = document.querySelector('#word-move-group');
+const wordMoveCancelButton = document.querySelector('#word-move-cancel');
+const wordMoveSubmitButton = document.querySelector('#word-move-submit');
+const wordMoveWordLabel = document.querySelector('#word-move-word');
+const wordMoveBackdrop = wordMoveDialog ? wordMoveDialog.querySelector('.modal-backdrop') : null;
+let wordMoveTargetWordId = null;
+let wordMoveOriginalGroupId = null;
+let wordMoveGroupsCache = [];
 
 function updateUserMenu(user) {
   if (!user) return;
@@ -75,6 +86,140 @@ function updateCounts() {
   if (wordCount) {
     wordCount.textContent = state.words.length;
   }
+}
+
+function resolveFolderName(folderId) {
+  const folder = state.folders.find((f) => f.id === folderId);
+  return folder ? folder.name : `폴더 ${folderId}`;
+}
+
+function updateWordMoveSubmitState() {
+  if (!wordMoveSubmitButton) return;
+  const hasSelection = Boolean(
+    wordMoveGroupSelect
+      && !wordMoveGroupSelect.disabled
+      && wordMoveGroupSelect.value
+  );
+  wordMoveSubmitButton.disabled = !hasSelection;
+}
+
+function populateWordMoveFolderOptions(selectedFolderId) {
+  if (!wordMoveFolderSelect) return;
+  wordMoveFolderSelect.innerHTML = '';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '폴더를 선택하세요';
+  placeholder.disabled = true;
+  wordMoveFolderSelect.appendChild(placeholder);
+
+  const seen = new Set();
+  const folders = [];
+
+  wordMoveGroupsCache.forEach((group) => {
+    if (seen.has(group.folder_id)) return;
+    seen.add(group.folder_id);
+    folders.push({ id: group.folder_id, name: resolveFolderName(group.folder_id) });
+  });
+
+  folders.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+  folders.forEach((folder) => {
+    const option = document.createElement('option');
+    option.value = String(folder.id);
+    option.textContent = folder.name;
+    if (selectedFolderId && folder.id === selectedFolderId) {
+      option.selected = true;
+      placeholder.selected = false;
+    }
+    wordMoveFolderSelect.appendChild(option);
+  });
+
+  if (!selectedFolderId) {
+    placeholder.selected = true;
+  }
+
+  const hasFolders = folders.length > 0;
+  wordMoveFolderSelect.disabled = !hasFolders;
+  if (!hasFolders) {
+    placeholder.textContent = '이동할 폴더가 없습니다.';
+    placeholder.selected = true;
+  }
+}
+
+function populateWordMoveGroupOptions(folderId, selectedGroupId) {
+  if (!wordMoveGroupSelect) return;
+  wordMoveGroupSelect.innerHTML = '';
+
+  if (!folderId) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '폴더를 먼저 선택하세요.';
+    option.disabled = true;
+    option.selected = true;
+    wordMoveGroupSelect.appendChild(option);
+    wordMoveGroupSelect.disabled = true;
+    updateWordMoveSubmitState();
+    return;
+  }
+
+  const groups = wordMoveGroupsCache.filter((group) => group.folder_id === folderId);
+
+  if (groups.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '이 폴더에는 그룹이 없습니다.';
+    option.disabled = true;
+    option.selected = true;
+    wordMoveGroupSelect.appendChild(option);
+    wordMoveGroupSelect.disabled = true;
+    updateWordMoveSubmitState();
+    return;
+  }
+
+  groups
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+    .forEach((group) => {
+      const option = document.createElement('option');
+      option.value = String(group.id);
+      option.textContent = group.name;
+      if (selectedGroupId && group.id === selectedGroupId) {
+        option.selected = true;
+      }
+      wordMoveGroupSelect.appendChild(option);
+    });
+
+  wordMoveGroupSelect.disabled = false;
+  if (!selectedGroupId) {
+    wordMoveGroupSelect.selectedIndex = 0;
+  }
+  updateWordMoveSubmitState();
+}
+
+function closeWordMoveDialog() {
+  if (!wordMoveDialog) return;
+  wordMoveDialog.classList.add('hidden');
+  wordMoveDialog.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  wordMoveTargetWordId = null;
+  wordMoveOriginalGroupId = null;
+  wordMoveGroupsCache = [];
+  if (wordMoveForm) {
+    wordMoveForm.reset();
+  }
+  if (wordMoveFolderSelect) {
+    wordMoveFolderSelect.innerHTML = '';
+    wordMoveFolderSelect.disabled = true;
+  }
+  if (wordMoveGroupSelect) {
+    wordMoveGroupSelect.innerHTML = '';
+    wordMoveGroupSelect.disabled = true;
+  }
+  if (wordMoveWordLabel) {
+    wordMoveWordLabel.textContent = '';
+  }
+  updateWordMoveSubmitState();
 }
 
 async function api(path, options = {}) {
@@ -544,44 +689,136 @@ async function openWordEditPrompt(wordId) {
 }
 
 async function openWordMovePrompt(wordId) {
+  if (!wordMoveDialog || !wordMoveForm || !wordMoveFolderSelect || !wordMoveGroupSelect) {
+    return;
+  }
+
   const word = state.words.find((w) => w.id === wordId);
   if (!word) return;
-  let groups = [];
+
+  wordMoveTargetWordId = wordId;
+  wordMoveOriginalGroupId = word.group_id;
+  if (wordMoveWordLabel) {
+    wordMoveWordLabel.textContent = `선택한 단어: ${word.term}`;
+  }
+
+  wordMoveDialog.classList.remove('hidden');
+  wordMoveDialog.removeAttribute('aria-hidden');
+  document.body.classList.add('modal-open');
+
+  if (wordMoveFolderSelect) {
+    wordMoveFolderSelect.disabled = true;
+  }
+  if (wordMoveGroupSelect) {
+    wordMoveGroupSelect.disabled = true;
+    wordMoveGroupSelect.innerHTML = '';
+  }
+  updateWordMoveSubmitState();
+
   try {
-    groups = await api('/groups');
+    const groups = await api('/groups');
+    wordMoveGroupsCache = Array.isArray(groups) ? groups : [];
   } catch (err) {
+    closeWordMoveDialog();
     showToast(err.message, 'error');
     return;
   }
-  if (!groups || groups.length === 0) {
+
+  if (!wordMoveGroupsCache || wordMoveGroupsCache.length === 0) {
+    closeWordMoveDialog();
     showToast('이동할 그룹이 없습니다.', 'error');
     return;
   }
-  const options = groups
-    .map((g) => {
-      const folder = state.folders.find((f) => f.id === g.folder_id);
-      const folderName = folder ? folder.name : `폴더 ${g.folder_id}`;
-      return `${g.id}: [${folderName}] ${g.name}`;
-    })
-    .join('\n');
-  const input = prompt(`이동할 그룹을 선택하세요:\n${options}`, String(word.group_id));
-  if (input === null) return;
-  const targetId = Number(input);
-  if (!Number.isInteger(targetId) || !groups.some((g) => g.id === targetId)) {
-    showToast('유효한 그룹 ID를 입력하세요.', 'error');
-    return;
+
+  const currentGroup = wordMoveGroupsCache.find((group) => group.id === word.group_id);
+  const selectedFolderId = currentGroup ? currentGroup.folder_id : null;
+
+  populateWordMoveFolderOptions(selectedFolderId);
+  if (selectedFolderId) {
+    populateWordMoveGroupOptions(selectedFolderId, word.group_id);
+  } else {
+    populateWordMoveGroupOptions(null, null);
   }
-  if (targetId === word.group_id) return;
-  try {
-    await api(`/words/${wordId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ group_id: targetId }),
-    });
-    showToast('단어를 다른 그룹으로 이동했습니다.');
-    await fetchWords();
-  } catch (err) {
-    showToast(err.message, 'error');
+
+  if (selectedFolderId) {
+    wordMoveFolderSelect.value = String(selectedFolderId);
   }
+
+  setTimeout(() => {
+    if (wordMoveGroupSelect && !wordMoveGroupSelect.disabled) {
+      wordMoveGroupSelect.focus();
+    } else if (wordMoveFolderSelect && !wordMoveFolderSelect.disabled) {
+      wordMoveFolderSelect.focus();
+    }
+  }, 0);
+}
+
+if (wordMoveCancelButton) {
+  wordMoveCancelButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeWordMoveDialog();
+  });
+}
+
+if (wordMoveBackdrop) {
+  wordMoveBackdrop.addEventListener('click', () => {
+    closeWordMoveDialog();
+  });
+}
+
+if (wordMoveFolderSelect) {
+  wordMoveFolderSelect.addEventListener('change', () => {
+    const folderValue = wordMoveFolderSelect.value;
+    const folderId = Number(folderValue);
+    if (!folderValue || !Number.isInteger(folderId)) {
+      populateWordMoveGroupOptions(null, null);
+      return;
+    }
+    populateWordMoveGroupOptions(folderId, null);
+  });
+}
+
+if (wordMoveGroupSelect) {
+  wordMoveGroupSelect.addEventListener('change', updateWordMoveSubmitState);
+}
+
+if (wordMoveForm) {
+  wordMoveForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!wordMoveTargetWordId || !wordMoveGroupSelect || wordMoveGroupSelect.disabled) {
+      return;
+    }
+    const targetValue = wordMoveGroupSelect.value;
+    const targetId = Number(targetValue);
+    if (!targetValue || !Number.isInteger(targetId)) {
+      showToast('이동할 그룹을 선택하세요.', 'error');
+      return;
+    }
+    if (wordMoveOriginalGroupId === targetId) {
+      closeWordMoveDialog();
+      return;
+    }
+    try {
+      await api(`/words/${wordMoveTargetWordId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ group_id: targetId }),
+      });
+      showToast('단어를 다른 그룹으로 이동했습니다.');
+      closeWordMoveDialog();
+      await fetchWords();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+if (wordMoveDialog) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !wordMoveDialog.classList.contains('hidden')) {
+      event.preventDefault();
+      closeWordMoveDialog();
+    }
+  });
 }
 
 async function deleteWord(wordId) {
