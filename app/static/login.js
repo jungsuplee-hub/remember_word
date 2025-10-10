@@ -4,6 +4,10 @@ const resetRequestForm = document.querySelector('#reset-request-form');
 const resetRequestFeedback = document.querySelector('#reset-request-feedback');
 const resetConfirmForm = document.querySelector('#reset-confirm-form');
 const resetConfirmFeedback = document.querySelector('#reset-confirm-feedback');
+const forgotPasswordTrigger = document.querySelector('#forgot-password-trigger');
+const forgotPasswordHint = document.querySelector('#forgot-password-hint');
+const forgotPasswordSections = document.querySelectorAll('[data-forgot-password-section]');
+const resetRequestEmailInput = resetRequestForm?.querySelector('input[name="email"]');
 const toast = document.querySelector('#toast');
 const socialButtons = document.querySelectorAll('[data-social-login]');
 
@@ -134,6 +138,19 @@ async function handleResetConfirm(event) {
   }
 }
 
+function revealForgotPasswordSections(event) {
+  event.preventDefault();
+  if (!forgotPasswordSections.length) return;
+  forgotPasswordSections.forEach((section) => section.classList.remove('hidden'));
+  if (forgotPasswordHint) {
+    forgotPasswordHint.classList.add('hidden');
+  }
+  forgotPasswordSections[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.requestAnimationFrame(() => {
+    resetRequestEmailInput?.focus();
+  });
+}
+
 async function checkExistingSession() {
   try {
     const res = await fetch('/auth/session');
@@ -154,6 +171,10 @@ if (resetRequestForm) {
 }
 if (resetConfirmForm) {
   resetConfirmForm.addEventListener('submit', handleResetConfirm);
+}
+
+if (forgotPasswordTrigger) {
+  forgotPasswordTrigger.addEventListener('click', revealForgotPasswordSections);
 }
 
 if (socialButtons.length) {
