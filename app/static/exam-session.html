@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remember Word - 시험 진행</title>
+    <link rel="icon" type="image/x-icon" href="/images/remember_word_log.ico" />
+    <link rel="icon" type="image/png" href="/images/remember_word_log.png" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="header-brand">
+          <img
+            src="/images/remember_word_log.png"
+            alt="Remember Word 로고"
+            class="header-logo"
+          />
+          <div>
+            <h1>시험 진행</h1>
+            <p>선택한 단어로 시험을 진행하세요.</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <a href="/static/exam.html" class="link-button">시험 모드</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="exam-session-layout">
+      <section class="panel exam-panel">
+        <div class="panel-header">
+          <h2>시험</h2>
+          <span id="exam-session-subtitle" class="panel-subtitle">시험을 준비 중입니다...</span>
+        </div>
+
+        <div id="exam-session-placeholder" class="exam-session-placeholder hidden">
+          <p>진행할 시험 정보를 찾을 수 없습니다.</p>
+          <a href="/static/exam.html" class="link-button">시험 설정으로 돌아가기</a>
+        </div>
+
+        <div id="exam-session-content" class="quiz-content hidden" aria-live="polite">
+          <div id="exam-session-progress" class="quiz-progress"></div>
+
+          <div id="exam-session-question" class="quiz-question hidden">
+            <h3 id="exam-session-prompt"></h3>
+            <p id="exam-session-reading" class="quiz-reading"></p>
+            <div class="quiz-actions">
+              <button type="button" id="exam-session-fail" class="danger">다시암기</button>
+              <button type="button" id="exam-session-success" class="primary">암기완료</button>
+              <button type="button" id="exam-session-preview" class="secondary">정답 미리보기</button>
+              <button type="button" id="exam-session-stop" class="danger-outline">시험 그만보기</button>
+            </div>
+            <div id="exam-session-answer" class="quiz-correct hidden"></div>
+          </div>
+
+          <div id="exam-session-summary" class="quiz-summary hidden">
+            <div class="exam-summary-header">
+              <h3>시험 결과</h3>
+              <span id="exam-session-summary-badge" class="badge hidden">Pass</span>
+            </div>
+            <p id="exam-session-summary-score" class="exam-summary-score hidden"></p>
+            <p id="exam-session-summary-text"></p>
+            <div class="quiz-summary-actions">
+              <button type="button" id="exam-session-retry" class="secondary">틀린 문제 다시 풀기</button>
+              <button type="button" id="exam-session-return" class="primary">시험 설정으로 돌아가기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <div
+      id="exam-session-result-modal"
+      class="modal hidden"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="exam-session-result-title"
+      aria-describedby="exam-session-result-message"
+    >
+      <div class="modal-card">
+        <h3 id="exam-session-result-title" class="modal-title">시험 결과</h3>
+        <p id="exam-session-result-message" class="modal-message"></p>
+        <div class="modal-actions">
+          <button type="button" id="exam-session-result-retry" class="secondary hidden">틀린 문제 다시 풀기</button>
+          <button type="button" id="exam-session-result-close" class="modal-close">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/exam-session.js" type="module"></script>
+  </body>
+</html>
