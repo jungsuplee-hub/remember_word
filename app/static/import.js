@@ -8,6 +8,63 @@ const adminLink = document.querySelector('#admin-link');
 const accountLink = document.querySelector('#account-link');
 const logoutButton = document.querySelector('#logout-button');
 let redirectTimer = null;
+let modalPreviouslyFocusedElement = null;
+
+const importGuideImageButton = document.querySelector('.import-guide-image-button');
+const importImageModal = document.querySelector('#import-image-modal');
+const importImageModalClose = importImageModal
+  ? importImageModal.querySelector('.import-image-modal-close')
+  : null;
+const importImageModalImage = importImageModal
+  ? importImageModal.querySelector('.import-image-modal-image')
+  : null;
+
+function handleImportImageModalKeydown(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeImportImageModal();
+  }
+}
+
+function openImportImageModal() {
+  if (!importImageModal) return;
+
+  modalPreviouslyFocusedElement = document.activeElement;
+
+  if (importImageModalImage && importGuideImageButton) {
+    const guideImage = importGuideImageButton.querySelector('img');
+    if (guideImage) {
+      importImageModalImage.src = guideImage.src;
+      importImageModalImage.alt = guideImage.alt || '';
+    }
+  }
+
+  importImageModal.removeAttribute('hidden');
+
+  requestAnimationFrame(() => {
+    importImageModal.classList.add('visible');
+  });
+
+  document.addEventListener('keydown', handleImportImageModalKeydown);
+  importImageModalClose?.focus();
+}
+
+function closeImportImageModal() {
+  if (!importImageModal) return;
+
+  importImageModal.classList.remove('visible');
+  importImageModal.setAttribute('hidden', '');
+  document.removeEventListener('keydown', handleImportImageModalKeydown);
+
+  if (
+    modalPreviouslyFocusedElement &&
+    typeof modalPreviouslyFocusedElement.focus === 'function'
+  ) {
+    modalPreviouslyFocusedElement.focus();
+  }
+
+  modalPreviouslyFocusedElement = null;
+}
 
 function updateUserMenu(user) {
   if (!user) return;
@@ -39,6 +96,24 @@ if (logoutButton) {
   logoutButton.addEventListener('click', (event) => {
     event.preventDefault();
     Session.logout();
+  });
+}
+
+if (importGuideImageButton && importImageModal) {
+  importGuideImageButton.addEventListener('click', () => {
+    openImportImageModal();
+  });
+
+  importImageModal.addEventListener('click', (event) => {
+    if (event.target === importImageModal) {
+      closeImportImageModal();
+    }
+  });
+}
+
+if (importImageModalClose) {
+  importImageModalClose.addEventListener('click', () => {
+    closeImportImageModal();
   });
 }
 
