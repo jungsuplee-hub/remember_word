@@ -76,10 +76,48 @@ function formatScore(score) {
   return Number.isInteger(score) ? String(score) : score.toFixed(1);
 }
 
+function parseDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'string') {
+    const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(value);
+    const normalized = value.includes(' ') && !value.includes('T') ? value.replace(' ', 'T') : value;
+    const isoCandidate = normalized.replace(/\.(\d{3})\d*(?=(?:[zZ]|[+-]\d{2}:?\d{2})?$)/, '.$1');
+
+    const parseWith = (input) => {
+      const parsed = new Date(input);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    if (!hasTimezone) {
+      const base = isoCandidate;
+      const candidate = base.endsWith('Z') ? base : `${base}Z`;
+      const withUtc = parseWith(candidate);
+      if (withUtc) {
+        return withUtc;
+      }
+    }
+
+    const direct = parseWith(isoCandidate);
+    if (direct) {
+      return direct;
+    }
+  }
+
+  if (typeof value === 'number') {
+    const fromNumber = new Date(value);
+    return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
+  }
+
+  return null;
+}
+
 function formatDateTime(value) {
-  if (!value) return '날짜 정보 없음';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '날짜 정보 없음';
+  const date = parseDate(value);
+  if (!date) return '날짜 정보 없음';
   return date.toLocaleString('ko-KR', {
     timeZone: 'Asia/Seoul',
     year: 'numeric',
