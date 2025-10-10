@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -19,6 +20,13 @@ from utils.auth import (
     require_current_user,
     validate_reset_token,
     verify_password,
+)
+from utils.oauth import (
+    OAuthError,
+    build_authorization_redirect,
+    complete_oauth_login,
+    generate_state,
+    get_provider,
 )
 
 router = APIRouter()
@@ -98,6 +106,69 @@ def session_info(
     current_user: models.Profile = Depends(require_current_user),
 ) -> schemas.SessionInfo:
     return current_user
+
+
+@router.get("/oauth/{provider}", name="oauth_start")
+def oauth_start(provider: str, request: Request, next: Optional[str] = "/") -> RedirectResponse:
+    try:
+        provider_config = get_provider(provider)
+    except OAuthError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+
+    state = generate_state()
+    request.session["oauth_state"] = state
+    if next and next.startswith("/"):
+        request.session["oauth_next"] = next
+    else:
+        request.session["oauth_next"] = "/"
+
+    redirect_url = build_authorization_redirect(provider_config, request=request, state=state)
+    return RedirectResponse(redirect_url)
+
+
+@router.get("/oauth/{provider}/callback", name="oauth_callback")
+async def oauth_callback(
+    provider: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    stored_state = request.session.pop("oauth_state", None)
+    next_url = request.session.pop("oauth_next", "/")
+    if not next_url or not isinstance(next_url, str) or not next_url.startswith("/"):
+        next_url = "/"
+
+    incoming_state = request.query_params.get("state")
+    if not stored_state or incoming_state != stored_state:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "잘못된 소셜 로그인 요청입니다.")
+
+    error = request.query_params.get("error")
+    if error:
+        error_description = request.query_params.get("error_description")
+        message = error_description or "소셜 로그인 도중 오류가 발생했습니다."
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, message)
+
+    code = request.query_params.get("code")
+    if not code:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "인증 코드가 전달되지 않았습니다.")
+
+    try:
+        profile = await complete_oauth_login(
+            provider,
+            code=code,
+            request=request,
+            state=incoming_state,
+            db=db,
+        )
+    except OAuthError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+
+    issue_session(request, profile)
+    profile.login_count = (profile.login_count or 0) + 1
+    profile.last_login_at = datetime.utcnow()
+    db.add(profile)
+    db.commit()
+
+    return RedirectResponse(next_url or "/")
 
 
 @router.post("/change-password", response_model=dict)

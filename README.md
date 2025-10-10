@@ -24,6 +24,18 @@
 3. 테이블 생성: `python3 app/create_tables.py`
 4. 서버 실행: `uvicorn app.main:app --reload --port 8080`
 
+### 소셜 로그인 연동
+
+Google, Kakao, Naver 간편 로그인을 사용하려면 아래 환경 변수를 추가로 설정해야 합니다.
+
+| 제공자 | 필수 환경 변수 | 비고 |
+| --- | --- | --- |
+| Google | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | OAuth 동의 화면과 리디렉션 URI(`/auth/oauth/google/callback`)를 Google Cloud Console에 등록해야 합니다. |
+| Kakao | `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`(선택) | Kakao Developers에서 웹 플랫폼을 등록하고 리디렉션 URI(`/auth/oauth/kakao/callback`)를 추가합니다. 비밀키가 발급되지 않은 앱은 `KAKAO_CLIENT_SECRET`을 비워두어도 됩니다. |
+| Naver | `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | 네이버 개발자 센터에서 애플리케이션을 생성하고 리디렉션 URI(`/auth/oauth/naver/callback`)를 설정합니다. |
+
+리디렉션 URI는 서비스 도메인에 따라 달라집니다. 예를 들어 로컬에서 8080 포트로 개발할 경우 `http://localhost:8080/auth/oauth/google/callback`과 같이 등록하면 됩니다.
+
 ## 향후 과제
 - 프런트엔드 SPA 구현(React/TypeScript 권장)
 - 업로드/시험/통계 화면 UI 개발 및 API 연동
