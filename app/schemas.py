@@ -16,6 +16,13 @@ class LoginRequest(BaseModel):
     password: str = Field(..., description="비밀번호")
 
 
+class RegistrationRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="로그인 아이디")
+    name: str = Field(..., min_length=1, max_length=100, description="표시 이름")
+    email: Optional[EmailStr] = Field(default=None, description="연락 이메일")
+    password: str = Field(..., min_length=6, max_length=128, description="비밀번호")
+
+
 class PasswordChangeRequest(BaseModel):
     current_password: str = Field(..., description="현재 비밀번호")
     new_password: str = Field(..., description="새 비밀번호")

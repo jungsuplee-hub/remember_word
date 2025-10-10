@@ -12,11 +12,13 @@
     <header>
       <div class="header-content">
         <div class="header-brand">
-          <img
-            src="/images/remember_word_log.png"
-            alt="Remember Word 로고"
-            class="header-logo"
-          />
+          <a href="/static/index.html" class="header-logo-link" aria-label="단어 관리로 이동">
+            <img
+              src="/images/remember_word_log.png"
+              alt="Remember Word 로고"
+              class="header-logo"
+            />
+          </a>
           <div>
             <h1>Remember Word</h1>
             <p>폴더와 그룹을 만들고 단어를 추가해보세요.</p>
@@ -26,7 +28,7 @@
           <div class="header-links">
             <a href="/static/memorize.html" class="link-button">단어 암기</a>
             <a href="/static/exam.html" class="link-button">시험 보기</a>
-            <a href="/static/password.html" id="password-link" class="link-button secondary">비밀번호 변경</a>
+            <a href="/static/account.html" id="account-link" class="link-button secondary">나의 계정</a>
             <a href="/static/admin.html" id="admin-link" class="link-button secondary" hidden>관리자</a>
           </div>
           <div class="user-meta">
@@ -40,7 +42,10 @@
     <main>
       <section id="folders" class="panel">
         <div class="panel-header">
-          <h2>폴더</h2>
+          <h2>
+            폴더
+            <span class="count-badge" id="folder-count">0</span>
+          </h2>
           <button id="refresh-folders" class="secondary">새로고침</button>
         </div>
         <ul id="folder-list" class="list"></ul>
@@ -59,7 +64,10 @@
 
       <section id="groups" class="panel">
         <div class="panel-header">
-          <h2>그룹</h2>
+          <h2>
+            그룹
+            <span class="count-badge" id="group-count">0</span>
+          </h2>
           <span class="panel-subtitle" id="groups-subtitle">폴더를 선택하세요</span>
         </div>
         <ul id="group-list" class="list"></ul>
@@ -78,7 +86,10 @@
 
       <section id="words" class="panel">
         <div class="panel-header">
-          <h2>단어</h2>
+          <h2>
+            단어
+            <span class="count-badge" id="word-count">0</span>
+          </h2>
           <div class="word-controls">
             <label>
               최소 별점

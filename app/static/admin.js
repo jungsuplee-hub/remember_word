@@ -3,7 +3,7 @@ const refreshButton = document.querySelector('#admin-refresh');
 const toast = document.querySelector('#toast');
 const userGreeting = document.querySelector('#user-greeting');
 const logoutButton = document.querySelector('#logout-button');
-const passwordLink = document.querySelector('#password-link');
+const accountLink = document.querySelector('#account-link');
 const sessionManager = window.Session;
 
 function showToast(message, type = 'info') {
@@ -19,8 +19,8 @@ function updateUserMenu(user) {
   if (userGreeting) {
     userGreeting.textContent = `${user.name}님`;
   }
-  if (passwordLink) {
-    passwordLink.hidden = false;
+  if (accountLink) {
+    accountLink.hidden = false;
   }
 }
 

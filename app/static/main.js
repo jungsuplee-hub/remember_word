@@ -20,18 +20,21 @@ const importLanguageInput = document.querySelector('#import-language');
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
-const passwordLink = document.querySelector('#password-link');
+const accountLink = document.querySelector('#account-link');
+const folderCount = document.querySelector('#folder-count');
+const groupCount = document.querySelector('#group-count');
+const wordCount = document.querySelector('#word-count');
 
 function updateUserMenu(user) {
   if (!user) return;
   if (userGreeting) {
-    userGreeting.textContent = `${user.name}님`; 
+    userGreeting.textContent = `${user.name}님`;
   }
   if (adminLink) {
     adminLink.hidden = !user.is_admin;
   }
-  if (passwordLink) {
-    passwordLink.hidden = false;
+  if (accountLink) {
+    accountLink.hidden = false;
   }
 }
 
@@ -49,6 +52,18 @@ function showToast(message, type = 'info') {
   toast.dataset.type = type;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function updateCounts() {
+  if (folderCount) {
+    folderCount.textContent = state.folders.length;
+  }
+  if (groupCount) {
+    groupCount.textContent = state.groups.length;
+  }
+  if (wordCount) {
+    wordCount.textContent = state.words.length;
+  }
 }
 
 async function api(path, options = {}) {
@@ -79,6 +94,7 @@ function renderFolders() {
   folderList.innerHTML = '';
   if (state.folders.length === 0) {
     folderList.innerHTML = '<li class="empty">등록된 폴더가 없습니다.</li>';
+    updateCounts();
     return;
   }
 
@@ -101,6 +117,7 @@ function renderFolders() {
     });
     folderList.appendChild(li);
   });
+  updateCounts();
 }
 
 function renderGroups() {
@@ -108,12 +125,15 @@ function renderGroups() {
   if (!state.activeFolderId) {
     groupList.innerHTML = '<li class="empty">왼쪽에서 폴더를 선택하세요.</li>';
     groupsSubtitle.textContent = '폴더를 선택하세요';
+    state.groups = [];
+    updateCounts();
     return;
   }
   groupsSubtitle.textContent = `선택한 폴더 ID: ${state.activeFolderId}`;
 
   if (state.groups.length === 0) {
     groupList.innerHTML = '<li class="empty">아직 그룹이 없습니다.</li>';
+    updateCounts();
     return;
   }
 
@@ -137,16 +157,20 @@ function renderGroups() {
 
     groupList.appendChild(li);
   });
+  updateCounts();
 }
 
 function renderWords() {
   wordTable.innerHTML = '';
   if (!state.activeGroupId) {
     wordTable.innerHTML = '<tr><td colspan="4">그룹을 선택하면 단어가 표시됩니다.</td></tr>';
+    state.words = [];
+    updateCounts();
     return;
   }
   if (state.words.length === 0) {
     wordTable.innerHTML = '<tr><td colspan="4">등록된 단어가 없습니다.</td></tr>';
+    updateCounts();
     return;
   }
 
@@ -171,6 +195,7 @@ function renderWords() {
     `;
     wordTable.appendChild(tr);
   });
+  updateCounts();
 }
 
 async function fetchFolders() {

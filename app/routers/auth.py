@@ -46,6 +46,47 @@ def login(
     return candidate
 
 
+@router.post("/register", response_model=schemas.SessionInfo, status_code=status.HTTP_201_CREATED)
+def register(
+    payload: schemas.RegistrationRequest, request: Request, db: Session = Depends(get_db)
+) -> schemas.SessionInfo:
+    username = payload.username.strip()
+    if not username:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "아이디를 입력하세요.")
+
+    existing_username = (
+        db.query(models.Profile)
+        .filter(func.lower(models.Profile.username) == func.lower(username))
+        .one_or_none()
+    )
+    if existing_username:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 사용 중인 아이디입니다.")
+
+    email = payload.email.strip().lower() if payload.email else None
+    if email:
+        existing_email = (
+            db.query(models.Profile)
+            .filter(func.lower(models.Profile.email) == email)
+            .one_or_none()
+        )
+        if existing_email:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 사용 중인 이메일입니다.")
+
+    profile = models.Profile(
+        username=username,
+        name=payload.name.strip() or username,
+        email=email,
+        password_hash=hash_password(payload.password),
+        is_admin=False,
+    )
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+
+    issue_session(request, profile)
+    return profile
+
+
 @router.post("/logout", response_model=dict)
 def logout(request: Request) -> dict:
     clear_session(request)

@@ -42,7 +42,7 @@ const resultRetryBtn = document.querySelector('#exam-session-result-retry');
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
-const passwordLink = document.querySelector('#password-link');
+const accountLink = document.querySelector('#account-link');
 const sessionManager = window.Session;
 
 function updateUserMenu(user) {
@@ -53,8 +53,8 @@ function updateUserMenu(user) {
   if (adminLink) {
     adminLink.hidden = !user.is_admin;
   }
-  if (passwordLink) {
-    passwordLink.hidden = false;
+  if (accountLink) {
+    accountLink.hidden = false;
   }
 }
 
