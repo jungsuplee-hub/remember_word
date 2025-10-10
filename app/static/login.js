@@ -6,8 +6,10 @@ const resetConfirmForm = document.querySelector('#reset-confirm-form');
 const resetConfirmFeedback = document.querySelector('#reset-confirm-feedback');
 const forgotPasswordTrigger = document.querySelector('#forgot-password-trigger');
 const forgotPasswordHint = document.querySelector('#forgot-password-hint');
-const forgotPasswordSections = document.querySelectorAll('[data-forgot-password-section]');
+const resetRequestSection = document.querySelector('[data-reset-request-section]');
+const resetConfirmSection = document.querySelector('[data-reset-confirm-section]');
 const resetRequestEmailInput = resetRequestForm?.querySelector('input[name="email"]');
+const resetConfirmTokenInput = resetConfirmForm?.querySelector('input[name="token"]');
 const toast = document.querySelector('#toast');
 const socialButtons = document.querySelectorAll('[data-social-login]');
 
@@ -84,6 +86,7 @@ async function handleResetRequest(event) {
     setFeedback(resetRequestFeedback, '이메일을 입력하세요.', 'error');
     return;
   }
+  revealResetConfirmSection();
   try {
     const res = await fetch('/auth/request-reset', {
       method: 'POST',
@@ -102,9 +105,24 @@ async function handleResetRequest(event) {
       data.message || '비밀번호 재설정 안내를 이메일로 전송했습니다.',
       'success',
     );
+    revealResetConfirmSection({ focusToken: true });
   } catch (error) {
     console.error(error);
     setFeedback(resetRequestFeedback, '요청 처리 중 오류가 발생했습니다.', 'error');
+  }
+}
+
+function revealResetConfirmSection({ focusToken = false } = {}) {
+  if (!resetConfirmSection) return;
+  const wasHidden = resetConfirmSection.classList.contains('hidden');
+  resetConfirmSection.classList.remove('hidden');
+  if (wasHidden) {
+    resetConfirmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  if (focusToken) {
+    window.requestAnimationFrame(() => {
+      resetConfirmTokenInput?.focus();
+    });
   }
 }
 
@@ -140,12 +158,16 @@ async function handleResetConfirm(event) {
 
 function revealForgotPasswordSections(event) {
   event.preventDefault();
-  if (!forgotPasswordSections.length) return;
-  forgotPasswordSections.forEach((section) => section.classList.remove('hidden'));
+  if (resetRequestSection) {
+    resetRequestSection.classList.remove('hidden');
+  }
+  if (resetConfirmSection) {
+    resetConfirmSection.classList.add('hidden');
+  }
   if (forgotPasswordHint) {
     forgotPasswordHint.classList.add('hidden');
   }
-  forgotPasswordSections[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  resetRequestSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   window.requestAnimationFrame(() => {
     resetRequestEmailInput?.focus();
   });
