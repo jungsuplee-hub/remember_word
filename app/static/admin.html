@@ -11,16 +11,18 @@
   <body data-guide-page="admin">
     <header>
       <div class="header-content">
-        <div class="header-brand">
-          <a href="/static/index.html" class="header-logo-link" aria-label="단어 관리로 이동">
-            <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="header-logo" />
-          </a>
-          <div>
+        <a href="/static/index.html" class="header-logo-link" aria-label="단어 관리로 이동">
+          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="header-logo" />
+        </a>
+        <div class="header-main">
+          <div class="header-top">
             <h1>관리자 대시보드</h1>
-            <p>계정별 데이터 현황과 로그인 이력을 확인하세요.</p>
+            <div class="user-meta">
+              <span id="user-greeting" class="user-greeting"></span>
+              <button id="logout-button" class="link-button danger">로그아웃</button>
+            </div>
           </div>
-        </div>
-        <div class="header-actions">
+          <p class="header-description">계정별 데이터 현황과 로그인 이력을 확인하세요.</p>
           <div class="header-links">
             <a href="/static/index.html" class="link-button">단어 관리</a>
             <a href="/static/memorize.html" class="link-button">단어 암기</a>
@@ -40,10 +42,6 @@
             >
               관리자
             </a>
-          </div>
-          <div class="user-meta">
-            <span id="user-greeting" class="user-greeting"></span>
-            <button id="logout-button" class="link-button danger">로그아웃</button>
           </div>
         </div>
       </div>
