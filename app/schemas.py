@@ -65,10 +65,12 @@ class ProfileOut(BaseModel):
 class FolderCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
+    default_language: Optional[str] = None
 
 
 class FolderUpdate(BaseModel):
     name: Optional[str] = None
+    default_language: Optional[str] = None
 
 
 class GroupCreate(BaseModel):
@@ -281,4 +283,59 @@ class AdminAccountStats(BaseModel):
     quiz_count: int
     login_count: int
     last_login_at: Optional[datetime]
+
+
+class MarketLanguageSummary(BaseModel):
+    language: str
+    folder_count: int
+    group_count: int
+
+
+class MarketFolderOut(BaseModel):
+    id: int
+    name: str
+    default_language: Optional[str]
+    group_count: int
+
+
+class MarketGroupOut(BaseModel):
+    id: int
+    name: str
+    word_count: int
+
+
+class MarketImportRequest(BaseModel):
+    folder_id: int
+    group_ids: List[int]
+
+    @root_validator(pre=True)
+    def validate_group_ids(cls, values):
+        raw_group_ids = values.get("group_ids") or []
+        normalized: List[int] = []
+        seen = set()
+        for gid in raw_group_ids:
+            if gid in (None, ""):
+                continue
+            try:
+                gid_int = int(gid)
+            except (TypeError, ValueError):
+                raise ValueError("group_ids는 정수여야 합니다.")
+            if gid_int in seen:
+                continue
+            seen.add(gid_int)
+            normalized.append(gid_int)
+        if not normalized:
+            raise ValueError("가져올 그룹을 하나 이상 선택하세요.")
+        values["group_ids"] = normalized
+        return values
+
+
+class MarketImportSummary(BaseModel):
+    folder_id: int
+    folder_name: str
+    default_language: Optional[str]
+    created_groups: int
+    updated_groups: int
+    imported_words: int
+    skipped_words: int
 

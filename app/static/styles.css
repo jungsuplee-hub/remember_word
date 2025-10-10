@@ -168,6 +168,124 @@ main.exam-layout .panel {
   width: 100%;
 }
 
+main.market-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 1.5rem;
+  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1rem, 4vw, 1.75rem) clamp(2.25rem, 5vw, 3rem);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: min(100%, 1200px);
+}
+
+.market-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.market-language-block {
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.market-language-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.market-language-label select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: white;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.market-group-list {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.market-group-list .empty {
+  margin: 0;
+  padding: 1rem 0;
+  color: #64748b;
+  text-align: center;
+}
+
+.market-group-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.8);
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.market-group-item:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.market-group-item input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #2563eb;
+}
+
+.market-group-name {
+  flex: 1;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.market-group-count {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.market-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 1.5rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.4) 0%, rgba(248, 250, 252, 0.9) 100%);
+}
+
+.market-actions button {
+  align-self: flex-end;
+}
+
+@media (max-width: 1024px) {
+  main.market-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .market-actions button {
+    width: 100%;
+  }
+
+  .market-group-list {
+    max-height: 320px;
+  }
+}
+
 main.exam-session-layout {
   display: flex;
   justify-content: center;
@@ -797,6 +915,11 @@ main.memorize-layout .panel {
 
 .list li span.name {
   font-weight: 600;
+}
+
+.list li span.meta {
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .form {
