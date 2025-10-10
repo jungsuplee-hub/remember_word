@@ -85,8 +85,12 @@ document.addEventListener('DOMContentLoaded', () => {
     requiresAdmin.forEach((element) => {
       if (!element) return;
       element.hidden = !isAdmin;
+      element.classList.toggle('hidden', !isAdmin);
       if (isAdmin) {
         element.removeAttribute('hidden');
+        element.setAttribute('aria-hidden', 'false');
+      } else {
+        element.setAttribute('aria-hidden', 'true');
       }
     });
   };
