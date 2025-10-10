@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
@@ -23,6 +24,14 @@ DEFAULT_USERS = [
         "email": "jungsup2.lee@gmail.com",
         "password": "e0425820",
         "is_admin": True,
+    },
+]
+
+FOLDER_LANGUAGE_OVERRIDES = [
+    {
+        "name": "대한검정회 한자",
+        "language": "한자",
+        "admin_only": True,
     },
 ]
 
@@ -60,6 +69,32 @@ def ensure_default_accounts() -> None:
         session = SessionLocal()
         accounts = {spec["username"]: _ensure_user(session, spec) for spec in DEFAULT_USERS}
         session.flush()
+
+        admin_ids = [
+            row[0]
+            for row in session.query(models.Profile.id)
+            .filter(models.Profile.is_admin.is_(True))
+            .all()
+        ]
+
+        for override in FOLDER_LANGUAGE_OVERRIDES:
+            query = session.query(models.Folder).filter(models.Folder.name == override["name"])
+            if override.get("admin_only", False):
+                if not admin_ids:
+                    continue
+                query = query.filter(models.Folder.profile_id.in_(admin_ids))
+
+            query = query.filter(
+                or_(
+                    models.Folder.default_language.is_(None),
+                    func.trim(models.Folder.default_language) == "",
+                    func.lower(func.trim(models.Folder.default_language)) == "기본",
+                )
+            )
+
+            query.update(
+                {"default_language": override["language"]}, synchronize_session=False
+            )
 
         primary_user = accounts["jiyoo"]
 

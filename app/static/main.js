@@ -33,12 +33,19 @@ function updateUserMenu(user) {
   }
   if (adminLink) {
     adminLink.hidden = !isAdmin;
+    adminLink.classList.toggle('hidden', !isAdmin);
     if (isAdmin) {
       adminLink.removeAttribute('hidden');
+      adminLink.setAttribute('aria-hidden', 'false');
+    } else {
+      adminLink.setAttribute('aria-hidden', 'true');
     }
   }
   if (accountLink) {
     accountLink.hidden = false;
+    accountLink.classList.remove('hidden');
+    accountLink.removeAttribute('hidden');
+    accountLink.setAttribute('aria-hidden', 'false');
   }
 }
 
