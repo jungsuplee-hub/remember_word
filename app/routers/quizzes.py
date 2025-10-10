@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 from database import get_db
@@ -276,3 +277,66 @@ def retry_incorrect(session_id: int, payload: schemas.QuizRetryRequest | None = 
         direction=new_session.direction,
         questions=questions_out,
     )
+
+
+@router.get("/history", response_model=list[schemas.QuizHistoryItem])
+def list_history(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    sessions = (
+        db.query(models.QuizSession)
+        .order_by(models.QuizSession.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    if not sessions:
+        return []
+
+    session_ids = [session.id for session in sessions]
+
+    group_rows = (
+        db.query(
+            models.QuizQuestion.session_id,
+            models.Group.name.label("group_name"),
+            models.Folder.name.label("folder_name"),
+        )
+        .join(models.Word, models.Word.id == models.QuizQuestion.word_id)
+        .join(models.Group, models.Group.id == models.Word.group_id)
+        .join(models.Folder, models.Folder.id == models.Group.folder_id)
+        .filter(models.QuizQuestion.session_id.in_(session_ids))
+        .all()
+    )
+
+    folder_by_session: dict[int, str | None] = {}
+    groups_by_session: dict[int, list[str]] = {}
+
+    for row in group_rows:
+        session_id = row.session_id
+        folder_name = row.folder_name
+        group_name = row.group_name
+        if session_id not in folder_by_session:
+            folder_by_session[session_id] = folder_name
+        groups = groups_by_session.setdefault(session_id, [])
+        if group_name and group_name not in groups:
+            groups.append(group_name)
+
+    history: list[schemas.QuizHistoryItem] = []
+    for session in sessions:
+        total = session.total_questions or 0
+        correct = session.correct_questions or 0
+        incorrect = max(0, total - correct)
+        score = (correct / total * 100) if total else 0.0
+        passed = total > 0 and (correct / total) >= 0.9
+        history.append(
+            schemas.QuizHistoryItem(
+                session_id=session.id,
+                created_at=session.created_at or datetime.utcnow(),
+                folder_name=folder_by_session.get(session.id),
+                group_names=groups_by_session.get(session.id, []),
+                total=total,
+                correct=correct,
+                incorrect=incorrect,
+                score=round(score, 1),
+                passed=passed,
+            )
+        )
+
+    return history

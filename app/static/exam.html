@@ -30,7 +30,7 @@
     </header>
 
     <main class="exam-layout">
-      <section class="panel">
+      <section class="panel exam-panel">
         <div class="panel-header">
           <h2>시험 설정</h2>
           <span class="panel-subtitle" id="exam-subtitle">폴더와 그룹을 선택한 뒤 시험을 시작하세요.</span>
@@ -112,7 +112,11 @@
           </div>
 
           <div id="exam-summary" class="quiz-summary hidden">
-            <h3>시험 결과</h3>
+            <div class="exam-summary-header">
+              <h3>시험 결과</h3>
+              <span id="exam-summary-badge" class="badge hidden">Pass</span>
+            </div>
+            <p id="exam-summary-score" class="exam-summary-score hidden"></p>
             <p id="exam-summary-text"></p>
             <div class="quiz-summary-actions">
               <button type="button" id="exam-retry" class="secondary">틀린 문제 다시 풀기</button>
@@ -121,9 +125,38 @@
           </div>
         </div>
       </section>
+
+      <aside class="panel exam-history-panel">
+        <div class="panel-header exam-history-header">
+          <div class="exam-history-heading">
+            <h2>시험 이력</h2>
+            <span class="panel-subtitle">최근 시험 기록을 확인하세요.</span>
+          </div>
+          <button type="button" id="exam-history-refresh" class="secondary">새로고침</button>
+        </div>
+        <div class="exam-history-body">
+          <p id="exam-history-empty" class="exam-history-empty">아직 시험 이력이 없습니다.</p>
+          <ul id="exam-history-list" class="exam-history-list"></ul>
+        </div>
+      </aside>
     </main>
 
     <div id="toast" role="status" aria-live="polite"></div>
+
+    <div
+      id="exam-result-modal"
+      class="modal hidden"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="exam-result-title"
+      aria-describedby="exam-result-message"
+    >
+      <div class="modal-card">
+        <h3 id="exam-result-title" class="modal-title">시험 결과</h3>
+        <p id="exam-result-message" class="modal-message"></p>
+        <button type="button" id="exam-result-close" class="modal-close">확인</button>
+      </div>
+    </div>
 
     <script src="/static/exam.js" defer></script>
   </body>

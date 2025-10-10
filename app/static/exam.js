@@ -11,6 +11,7 @@ const state = {
     index: 0,
     progress: null,
     awaitingResult: false,
+    lastResult: null,
   },
 };
 
@@ -34,6 +35,19 @@ const summaryEl = document.querySelector('#exam-summary');
 const summaryText = document.querySelector('#exam-summary-text');
 const retryBtn = document.querySelector('#exam-retry');
 const resetBtn = document.querySelector('#exam-reset');
+const summaryScore = document.querySelector('#exam-summary-score');
+const summaryBadge = document.querySelector('#exam-summary-badge');
+const historyList = document.querySelector('#exam-history-list');
+const historyEmpty = document.querySelector('#exam-history-empty');
+const historyRefreshBtn = document.querySelector('#exam-history-refresh');
+const resultModal = document.querySelector('#exam-result-modal');
+const resultTitle = document.querySelector('#exam-result-title');
+const resultMessage = document.querySelector('#exam-result-message');
+const resultCloseBtn = document.querySelector('#exam-result-close');
+const historyEmptyDefaultText = historyEmpty
+  ? historyEmpty.textContent
+  : '아직 시험 이력이 없습니다.';
+let historyLoading = false;
 
 function showToast(message, type = 'info') {
   toast.textContent = message;
@@ -64,6 +78,60 @@ async function api(path, options = {}) {
   } catch {
     return text;
   }
+}
+
+function computeScore(correct, total) {
+  if (!total) return 0;
+  const value = (correct / total) * 100;
+  return Math.round(value * 10) / 10;
+}
+
+function formatScore(score) {
+  if (!Number.isFinite(score)) return '-';
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
+}
+
+function isPassed(correct, total) {
+  if (!total) return false;
+  return correct / total >= 0.9;
+}
+
+function formatDateTime(value) {
+  if (!value) return '날짜 정보 없음';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '날짜 정보 없음';
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function hideResultModal() {
+  if (!resultModal) return;
+  resultModal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+function showResultModal({ score, passed, correct, incorrect, total }) {
+  if (!resultModal || !resultTitle || !resultMessage || !resultCloseBtn) return;
+  const scoreText = `${formatScore(score)}점`;
+  resultModal.dataset.status = passed ? 'pass' : 'fail';
+  resultTitle.textContent = passed ? 'Pass' : 'Fail';
+  resultTitle.classList.toggle('pass', passed);
+  resultTitle.classList.toggle('fail', !passed);
+  resultMessage.textContent = `${total}문제 중 ${correct}문제를 맞히고 ${incorrect}문제를 틀렸습니다. ${scoreText}을 기록했습니다.`;
+  resultModal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  setTimeout(() => {
+    try {
+      resultCloseBtn.focus({ preventScroll: true });
+    } catch (err) {
+      // ignore focus errors
+    }
+  }, 0);
 }
 
 function renderFolders() {
@@ -140,6 +208,13 @@ function getSelectedGroupNames() {
 
 function updateSubtitle() {
   if (!state.quiz.active) {
+    if (state.quiz.lastResult) {
+      const { correct, total, score, passed } = state.quiz.lastResult;
+      const statusText = passed ? 'Pass' : 'Fail';
+      subtitle.textContent = `마지막 시험 결과: ${correct}/${total} · ${formatScore(score)}점 ${statusText}`;
+      return;
+    }
+
     if (!state.quiz.completed) {
       if (state.activeFolderId && state.selectedGroupIds.length) {
         const selectedNames = getSelectedGroupNames();
@@ -151,8 +226,6 @@ function updateSubtitle() {
       } else {
         subtitle.textContent = '폴더와 그룹을 선택한 뒤 시험을 시작하세요.';
       }
-    } else if (state.quiz.progress) {
-      subtitle.textContent = `마지막 시험 결과: ${state.quiz.progress.correct}/${state.quiz.progress.total}`;
     } else {
       subtitle.textContent = '시험 준비가 완료되었습니다.';
     }
@@ -185,7 +258,8 @@ function hideAnswerPreview() {
   answerEl.textContent = '';
 }
 
-function resetQuizState() {
+function resetQuizState(options = {}) {
+  const { preserveLastResult = false } = options;
   state.quiz.active = false;
   state.quiz.completed = false;
   state.quiz.sessionId = null;
@@ -193,6 +267,9 @@ function resetQuizState() {
   state.quiz.index = 0;
   state.quiz.progress = null;
   state.quiz.awaitingResult = false;
+  if (!preserveLastResult) {
+    state.quiz.lastResult = null;
+  }
   resetPreview();
   content.classList.add('hidden');
   questionContainer.classList.remove('hidden');
@@ -200,6 +277,18 @@ function resetQuizState() {
   previewBtn.disabled = true;
   memorizeFailBtn.disabled = true;
   memorizeSuccessBtn.disabled = true;
+  if (summaryScore) {
+    summaryScore.textContent = '';
+    summaryScore.classList.add('hidden');
+  }
+  if (summaryBadge) {
+    summaryBadge.classList.add('hidden');
+    summaryBadge.classList.remove('badge-pass', 'badge-fail');
+  }
+  if (summaryText) {
+    summaryText.textContent = '';
+  }
+  hideResultModal();
   updateSubtitle();
 }
 
@@ -242,14 +331,124 @@ function showSummary() {
   summaryEl.classList.remove('hidden');
   if (state.quiz.progress) {
     const { total, correct } = state.quiz.progress;
-    const incorrect = total - correct;
-    summaryText.textContent = `총 ${total}문제 중 ${correct}문제를 암기했고 ${incorrect}문제를 다시 암기해야 합니다.`;
+    const incorrect = Math.max(0, total - correct);
+    const score = computeScore(correct, total);
+    const passed = isPassed(correct, total);
+    const statusText = passed ? 'Pass' : 'Fail';
+    if (summaryText) {
+      summaryText.textContent = `총 ${total}문제 중 ${correct}문제를 맞히고 ${incorrect}문제를 틀렸습니다.`;
+    }
+    if (summaryScore) {
+      summaryScore.textContent = `${formatScore(score)}점`;
+      summaryScore.classList.remove('hidden');
+    }
+    if (summaryBadge) {
+      summaryBadge.textContent = statusText;
+      summaryBadge.classList.remove('hidden');
+      summaryBadge.classList.toggle('badge-pass', passed);
+      summaryBadge.classList.toggle('badge-fail', !passed);
+    }
+    state.quiz.lastResult = { total, correct, incorrect, score, passed };
+    showResultModal({ score, passed, correct, incorrect, total });
     retryBtn.disabled = !state.quiz.progress.incorrect_question_ids || state.quiz.progress.incorrect_question_ids.length === 0;
   } else {
-    summaryText.textContent = '시험 결과를 가져오지 못했습니다.';
+    if (summaryText) {
+      summaryText.textContent = '시험 결과를 가져오지 못했습니다.';
+    }
+    if (summaryScore) {
+      summaryScore.textContent = '';
+      summaryScore.classList.add('hidden');
+    }
+    if (summaryBadge) {
+      summaryBadge.classList.add('hidden');
+      summaryBadge.classList.remove('badge-pass', 'badge-fail');
+    }
     retryBtn.disabled = true;
   }
+  fetchHistory({ showLoading: false });
   updateSubtitle();
+}
+
+function renderHistory(items) {
+  if (!historyList || !historyEmpty) return;
+  historyList.innerHTML = '';
+  const entries = Array.isArray(items) ? items : [];
+  if (!entries.length) {
+    historyEmpty.textContent = historyEmptyDefaultText;
+    historyEmpty.classList.remove('hidden');
+    return;
+  }
+
+  historyEmpty.classList.add('hidden');
+
+  entries.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'exam-history-item';
+
+    const header = document.createElement('div');
+    header.className = 'exam-history-item-header';
+
+    const badge = document.createElement('span');
+    badge.className = `badge ${item.passed ? 'badge-pass' : 'badge-fail'}`;
+    badge.textContent = item.passed ? 'Pass' : 'Fail';
+
+    const scoreEl = document.createElement('span');
+    scoreEl.className = 'exam-history-item-score';
+    const scoreValue = Number(item.score);
+    const safeScore = Number.isFinite(scoreValue) ? scoreValue : 0;
+    scoreEl.textContent = `${formatScore(safeScore)}점`;
+
+    header.appendChild(badge);
+    header.appendChild(scoreEl);
+
+    const meta = document.createElement('p');
+    meta.className = 'exam-history-item-meta';
+    const folderName = item.folder_name || '폴더 정보 없음';
+    meta.textContent = `${formatDateTime(item.created_at)} · ${folderName}`;
+
+    const groupsEl = document.createElement('p');
+    groupsEl.className = 'exam-history-item-groups';
+    const groups = Array.isArray(item.group_names) && item.group_names.length
+      ? item.group_names.join(', ')
+      : '그룹 정보 없음';
+    groupsEl.textContent = `그룹: ${groups}`;
+
+    const stats = document.createElement('p');
+    stats.className = 'exam-history-item-stats';
+    const total = Number(item.total) || 0;
+    const incorrect = Number(item.incorrect) || 0;
+    const correct = Number(item.correct) || 0;
+    stats.textContent = `${total}문제 중 ${incorrect}문제를 틀렸습니다. (정답 ${correct}개)`;
+
+    li.appendChild(header);
+    li.appendChild(meta);
+    li.appendChild(groupsEl);
+    li.appendChild(stats);
+
+    historyList.appendChild(li);
+  });
+}
+
+async function fetchHistory(options = {}) {
+  if (!historyList || !historyEmpty) return;
+  const { showLoading = true } = options;
+  if (historyLoading) return;
+  historyLoading = true;
+  if (showLoading) {
+    historyEmpty.textContent = '시험 이력을 불러오는 중입니다...';
+    historyEmpty.classList.remove('hidden');
+  }
+  try {
+    const data = await api('/quizzes/history?limit=20');
+    renderHistory(data);
+  } catch (err) {
+    historyList.innerHTML = '';
+    historyEmpty.textContent = `시험 이력을 불러오지 못했습니다. ${err.message}`;
+    historyEmpty.classList.remove('hidden');
+    showToast(err.message, 'error');
+  } finally {
+    historyLoading = false;
+  }
 }
 
 async function fetchFolders() {
@@ -349,7 +548,7 @@ async function handleStart(event) {
     showQuestion();
     showToast('시험을 시작합니다.');
   } catch (err) {
-    resetQuizState();
+    resetQuizState({ preserveLastResult: true });
     showToast(err.message, 'error');
   }
 }
@@ -426,13 +625,13 @@ async function handleRetry() {
     showQuestion();
     showToast('틀린 문제를 다시 시작합니다.');
   } catch (err) {
-    resetQuizState();
+    resetQuizState({ preserveLastResult: true });
     showToast(err.message, 'error');
   }
 }
 
 function handleReset() {
-  resetQuizState();
+  resetQuizState({ preserveLastResult: true });
   showToast('시험 설정을 초기화했습니다.');
 }
 
@@ -507,6 +706,12 @@ function handlePreviewKeyUp(event) {
   }
 }
 
+function handleGlobalKeydown(event) {
+  if (event.key === 'Escape' && resultModal && !resultModal.classList.contains('hidden')) {
+    hideResultModal();
+  }
+}
+
 function init() {
   form.addEventListener('submit', handleStart);
   memorizeFailBtn.addEventListener('click', () => submitResult(false));
@@ -523,8 +728,23 @@ function init() {
   previewBtn.addEventListener('pointercancel', handlePreviewPointerUp);
   previewBtn.addEventListener('keydown', handlePreviewKeyDown);
   previewBtn.addEventListener('keyup', handlePreviewKeyUp);
+  if (historyRefreshBtn) {
+    historyRefreshBtn.addEventListener('click', () => fetchHistory());
+  }
+  if (resultCloseBtn) {
+    resultCloseBtn.addEventListener('click', hideResultModal);
+  }
+  if (resultModal) {
+    resultModal.addEventListener('click', (event) => {
+      if (event.target === resultModal) {
+        hideResultModal();
+      }
+    });
+  }
+  document.addEventListener('keydown', handleGlobalKeydown);
   resetQuizState();
   fetchFolders();
+  fetchHistory();
   updateSubtitle();
 }
 
