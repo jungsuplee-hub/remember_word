@@ -19,6 +19,7 @@ class Folder(Base):
     profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=True)
     name = Column(String, nullable=False)
     parent_id = Column(Integer, ForeignKey("folders.id"), nullable=True)
+    default_language = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     groups = relationship("Group", back_populates="folder", cascade="all,delete")
     children = relationship("Folder", cascade="all,delete")

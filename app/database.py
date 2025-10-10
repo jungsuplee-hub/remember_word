@@ -110,6 +110,15 @@ def ensure_schema() -> None:
                 text("ALTER TABLE folders ADD COLUMN profile_id INTEGER REFERENCES profiles(id)")
             )
 
+        def add_folder_column(column_name: str, ddl: str) -> None:
+            if column_name not in folder_columns:
+                connection.execute(text(ddl))
+
+        add_folder_column(
+            "default_language",
+            "ALTER TABLE folders ADD COLUMN default_language VARCHAR(255)",
+        )
+
         try:
             group_columns = {
                 column["name"] for column in inspector.get_columns("groups")

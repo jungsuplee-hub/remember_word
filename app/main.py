@@ -16,7 +16,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 from database import ensure_schema
-from routers import folders, groups, words, profiles, quizzes, auth, admin
+from routers import folders, groups, words, profiles, quizzes, auth, admin, market
 from utils.auth import SESSION_MAX_AGE_SECONDS
 from utils.bootstrap import ensure_default_accounts
 
@@ -60,3 +60,4 @@ app.include_router(profiles.router, prefix="/profiles", tags=["profiles"])
 app.include_router(quizzes.router, prefix="/quizzes", tags=["quizzes"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
+app.include_router(market.router, prefix="/market", tags=["market"])

@@ -30,6 +30,7 @@ def create_folder(
         name=payload.name,
         parent_id=payload.parent_id if parent_folder else None,
         profile_id=current_user.id,
+        default_language=payload.default_language,
     )
     db.add(f); db.commit(); db.refresh(f)
     return {"id": f.id}
@@ -45,7 +46,15 @@ def list_folders(
         .all()
     )
     rows.sort(key=lambda r: korean_alnum_sort_key(r.name or ""))
-    return [{"id": r.id, "name": r.name, "parent_id": r.parent_id} for r in rows]
+    return [
+        {
+            "id": r.id,
+            "name": r.name,
+            "parent_id": r.parent_id,
+            "default_language": r.default_language,
+        }
+        for r in rows
+    ]
 
 
 @router.patch("/{folder_id}", response_model=dict)
@@ -69,6 +78,8 @@ def update_folder(
     data = payload.model_dump(exclude_unset=True)
     if "name" in data and data["name"]:
         folder.name = data["name"]
+    if "default_language" in data:
+        folder.default_language = data["default_language"]
 
     db.commit()
     return {"id": folder.id, "name": folder.name}

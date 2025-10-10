@@ -379,14 +379,31 @@ async def import_with_structure(
 
     df = try_parse_dataframe()
 
+    def normalize(value: str | int | float | bool | None) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float) and math.isnan(value):
+            return ""
+        return str(value).strip()
+
+    def normalize_key(value: str | int | float | bool | None) -> str:
+        return normalize(value).lower()
+
+    default_language_value = normalize(default_language) or "기본"
+
     folders = (
         db.query(models.Folder)
         .filter(models.Folder.profile_id == current_user.id)
         .all()
     )
-    folder_cache: dict[str, models.Folder] = {
-        (f.name or "").strip().lower(): f for f in folders
-    }
+    folder_cache: dict[tuple[str, str], models.Folder] = {}
+    for folder in folders:
+        name_key = normalize_key(folder.name)
+        language_key = normalize_key(folder.default_language)
+        folder_cache[(name_key, language_key)] = folder
+        if not language_key:
+            folder_cache.setdefault((name_key, ""), folder)
+
     group_cache: dict[tuple[int, str], models.Group] = {}
     word_cache: defaultdict[int, set[tuple[str, str]]] = defaultdict(set)
 
@@ -395,32 +412,43 @@ async def import_with_structure(
     folders_created = 0
     groups_created = 0
 
-    def normalize(value: str | int | float | bool | None) -> str:
-        if value is None:
-            return ""
-        if isinstance(value, float) and math.isnan(value):
-            return ""
-        return str(value).strip()
-
     for row in df.to_dict(orient="records"):
         folder_name = normalize(row.get("folder"))
         group_name = normalize(row.get("group"))
         term = normalize(row.get("term"))
         meaning = normalize(row.get("meaning"))
-        language = normalize(row.get("language")) or default_language
+        language = normalize(row.get("language")) or default_language_value
 
         if not folder_name or not group_name or not term or not meaning:
             skipped += 1
             continue
 
-        folder_key = folder_name.lower()
+        name_key = normalize_key(folder_name)
+        language_key = normalize_key(default_language_value)
+        folder_key = (name_key, language_key)
         folder = folder_cache.get(folder_key)
+        if not folder and language_key:
+            fallback_key = (name_key, "")
+            folder = folder_cache.get(fallback_key)
+            if folder and not normalize(folder.default_language):
+                folder.default_language = default_language_value
+                folder_cache[folder_key] = folder
+
         if not folder:
-            folder = models.Folder(name=folder_name, profile_id=current_user.id)
+            folder = models.Folder(
+                name=folder_name,
+                profile_id=current_user.id,
+                default_language=default_language_value,
+            )
             db.add(folder)
             db.flush()
             folder_cache[folder_key] = folder
+            if not language_key:
+                folder_cache[(name_key, "")] = folder
             folders_created += 1
+        elif default_language_value and not normalize(folder.default_language):
+            folder.default_language = default_language_value
+            folder_cache[(name_key, language_key)] = folder
 
         group_key = (folder.id, group_name.lower())
         group = group_cache.get(group_key)
