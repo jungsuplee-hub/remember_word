@@ -180,6 +180,32 @@
     </main>
 
     <div
+      id="word-edit-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="word-edit-title"
+    >
+      <div class="modal-backdrop" data-dismiss="word-edit"></div>
+      <form id="word-edit-form" class="modal-content" role="document">
+        <h2 id="word-edit-title">단어 수정</h2>
+        <p id="word-edit-word" class="modal-caption"></p>
+        <label class="modal-field">
+          단어
+          <input id="word-edit-term" name="term" type="text" required />
+        </label>
+        <label class="modal-field">
+          뜻
+          <input id="word-edit-meaning" name="meaning" type="text" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="word-edit-cancel">취소</button>
+          <button type="submit" id="word-edit-submit" disabled>저장</button>
+        </div>
+      </form>
+    </div>
+
+    <div
       id="word-move-dialog"
       class="modal hidden"
       role="dialog"
