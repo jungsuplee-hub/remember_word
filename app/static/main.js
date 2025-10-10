@@ -24,6 +24,14 @@ const accountLink = document.querySelector('#account-link');
 const folderCount = document.querySelector('#folder-count');
 const groupCount = document.querySelector('#group-count');
 const wordCount = document.querySelector('#word-count');
+const wordEditDialog = document.querySelector('#word-edit-dialog');
+const wordEditForm = document.querySelector('#word-edit-form');
+const wordEditTermInput = document.querySelector('#word-edit-term');
+const wordEditMeaningInput = document.querySelector('#word-edit-meaning');
+const wordEditCancelButton = document.querySelector('#word-edit-cancel');
+const wordEditSubmitButton = document.querySelector('#word-edit-submit');
+const wordEditWordLabel = document.querySelector('#word-edit-word');
+const wordEditBackdrop = wordEditDialog ? wordEditDialog.querySelector('.modal-backdrop') : null;
 const wordMoveDialog = document.querySelector('#word-move-dialog');
 const wordMoveForm = document.querySelector('#word-move-form');
 const wordMoveFolderSelect = document.querySelector('#word-move-folder');
@@ -32,6 +40,7 @@ const wordMoveCancelButton = document.querySelector('#word-move-cancel');
 const wordMoveSubmitButton = document.querySelector('#word-move-submit');
 const wordMoveWordLabel = document.querySelector('#word-move-word');
 const wordMoveBackdrop = wordMoveDialog ? wordMoveDialog.querySelector('.modal-backdrop') : null;
+let wordEditTargetWordId = null;
 let wordMoveTargetWordId = null;
 let wordMoveOriginalGroupId = null;
 let wordMoveGroupsCache = [];
@@ -74,6 +83,13 @@ function showToast(message, type = 'info') {
   toast.dataset.type = type;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function updateWordEditSubmitState() {
+  if (!wordEditSubmitButton || !wordEditTermInput || !wordEditMeaningInput) return;
+  const hasTerm = Boolean(wordEditTermInput.value.trim());
+  const hasMeaning = Boolean(wordEditMeaningInput.value.trim());
+  wordEditSubmitButton.disabled = !(hasTerm && hasMeaning);
 }
 
 function updateCounts() {
@@ -551,7 +567,7 @@ function handleWordTableClick(event) {
   if (editBtn) {
     const row = editBtn.closest('tr');
     const wordId = Number(row.dataset.id);
-    openWordEditPrompt(wordId);
+    openWordEditDialog(wordId);
   }
 }
 
@@ -657,35 +673,46 @@ async function deleteGroup(groupId) {
   }
 }
 
-async function openWordEditPrompt(wordId) {
+function closeWordEditDialog() {
+  if (!wordEditDialog) return;
+  wordEditDialog.classList.add('hidden');
+  wordEditDialog.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  wordEditTargetWordId = null;
+  if (wordEditForm) {
+    wordEditForm.reset();
+  }
+  if (wordEditWordLabel) {
+    wordEditWordLabel.textContent = '';
+  }
+  updateWordEditSubmitState();
+}
+
+function openWordEditDialog(wordId) {
+  if (!wordEditDialog || !wordEditForm || !wordEditTermInput || !wordEditMeaningInput) {
+    return;
+  }
   const word = state.words.find((w) => w.id === wordId);
   if (!word) return;
-  const nextTerm = prompt('단어를 수정하세요.', word.term);
-  if (nextTerm === null) return;
-  const term = nextTerm.trim();
-  if (!term) {
-    showToast('단어는 비워둘 수 없습니다.', 'error');
-    return;
+
+  wordEditTargetWordId = wordId;
+  wordEditDialog.classList.remove('hidden');
+  wordEditDialog.removeAttribute('aria-hidden');
+  document.body.classList.add('modal-open');
+
+  if (wordEditWordLabel) {
+    wordEditWordLabel.textContent = `선택한 단어: ${word.term}`;
   }
-  const nextMeaning = prompt('뜻을 수정하세요.', word.meaning);
-  if (nextMeaning === null) return;
-  const meaning = nextMeaning.trim();
-  if (!meaning) {
-    showToast('뜻은 비워둘 수 없습니다.', 'error');
-    return;
-  }
-  try {
-    const updated = await api(`/words/${wordId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ term, meaning }),
-    });
-    const idx = state.words.findIndex((w) => w.id === wordId);
-    if (idx >= 0) state.words[idx] = updated;
-    renderWords();
-    showToast('단어를 수정했습니다.');
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
+  wordEditTermInput.value = word.term ?? '';
+  wordEditMeaningInput.value = word.meaning ?? '';
+  updateWordEditSubmitState();
+
+  setTimeout(() => {
+    if (wordEditTermInput) {
+      wordEditTermInput.focus();
+      wordEditTermInput.select();
+    }
+  }, 0);
 }
 
 async function openWordMovePrompt(wordId) {
@@ -751,6 +778,76 @@ async function openWordMovePrompt(wordId) {
       wordMoveFolderSelect.focus();
     }
   }, 0);
+}
+
+if (wordEditTermInput) {
+  wordEditTermInput.addEventListener('input', updateWordEditSubmitState);
+}
+
+if (wordEditMeaningInput) {
+  wordEditMeaningInput.addEventListener('input', updateWordEditSubmitState);
+}
+
+if (wordEditCancelButton) {
+  wordEditCancelButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeWordEditDialog();
+  });
+}
+
+if (wordEditBackdrop) {
+  wordEditBackdrop.addEventListener('click', () => {
+    closeWordEditDialog();
+  });
+}
+
+if (wordEditForm) {
+  wordEditForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!wordEditTargetWordId || !wordEditTermInput || !wordEditMeaningInput) {
+      return;
+    }
+
+    const term = wordEditTermInput.value.trim();
+    const meaning = wordEditMeaningInput.value.trim();
+
+    if (!term || !meaning) {
+      showToast('단어와 뜻을 모두 입력하세요.', 'error');
+      updateWordEditSubmitState();
+      return;
+    }
+
+    if (wordEditSubmitButton) {
+      wordEditSubmitButton.disabled = true;
+    }
+
+    try {
+      const updated = await api(`/words/${wordEditTargetWordId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ term, meaning }),
+      });
+      const idx = state.words.findIndex((w) => w.id === wordEditTargetWordId);
+      if (idx >= 0) state.words[idx] = updated;
+      renderWords();
+      showToast('단어를 수정했습니다.');
+      closeWordEditDialog();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      if (wordEditSubmitButton) {
+        wordEditSubmitButton.disabled = false;
+      }
+      updateWordEditSubmitState();
+    }
+  });
+}
+
+if (wordEditDialog) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !wordEditDialog.classList.contains('hidden')) {
+      closeWordEditDialog();
+    }
+  });
 }
 
 if (wordMoveCancelButton) {
