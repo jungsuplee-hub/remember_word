@@ -259,19 +259,6 @@ main.market-layout {
   font-size: 0.9rem;
 }
 
-.market-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem 1.5rem 1.5rem;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.4) 0%, rgba(248, 250, 252, 0.9) 100%);
-}
-
-.market-actions > button {
-  align-self: flex-end;
-}
-
 .market-bulk-actions {
   display: flex;
   flex-wrap: wrap;
@@ -283,13 +270,34 @@ main.market-layout {
   min-width: 110px;
 }
 
+.market-group-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.85) 0%, rgba(248, 250, 252, 0.5) 100%);
+}
+
+.market-group-toolbar .form-description {
+  margin: 0;
+}
+
+.market-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.2) 0%, rgba(248, 250, 252, 0.8) 100%);
+}
+
+.market-actions > button {
+  min-width: 200px;
+}
+
 @media (max-width: 1024px) {
   main.market-layout {
     grid-template-columns: 1fr;
-  }
-
-  .market-actions > button {
-    width: 100%;
   }
 
   .market-bulk-actions {
@@ -298,6 +306,10 @@ main.market-layout {
   }
 
   .market-bulk-actions button {
+    width: 100%;
+  }
+
+  .market-actions > button {
     width: 100%;
   }
 
@@ -1288,6 +1300,84 @@ tbody tr:hover {
 
 .hidden {
   display: none !important;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.modal-content h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #0f172a;
+}
+
+.modal-caption {
+  margin: -0.25rem 0 0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.modal-field select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #f8fafc;
+  font-size: 1rem;
+}
+
+.modal-field select:disabled {
+  color: #94a3b8;
+  background: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.modal-actions > button {
+  min-width: 110px;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 .form-details {
