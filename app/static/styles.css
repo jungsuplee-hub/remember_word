@@ -268,8 +268,19 @@ main.market-layout {
   background: linear-gradient(180deg, rgba(248, 250, 252, 0.4) 0%, rgba(248, 250, 252, 0.9) 100%);
 }
 
-.market-actions button {
+.market-actions > button {
   align-self: flex-end;
+}
+
+.market-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.market-bulk-actions button {
+  min-width: 110px;
 }
 
 @media (max-width: 1024px) {
@@ -277,7 +288,16 @@ main.market-layout {
     grid-template-columns: 1fr;
   }
 
-  .market-actions button {
+  .market-actions > button {
+    width: 100%;
+  }
+
+  .market-bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .market-bulk-actions button {
     width: 100%;
   }
 
