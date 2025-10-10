@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, Field, root_validator
 from typing import Optional, List, Literal
 
@@ -173,4 +174,16 @@ class QuizProgress(BaseModel):
 class QuizRetryRequest(BaseModel):
     question_ids: Optional[List[int]] = Field(default=None, description="다시 풀고 싶은 문항 ID 목록")
     random: Optional[bool] = Field(default=None, description="랜덤 여부 덮어쓰기")
+
+
+class QuizHistoryItem(BaseModel):
+    session_id: int
+    created_at: datetime
+    folder_name: Optional[str]
+    group_names: List[str] = Field(default_factory=list)
+    total: int
+    correct: int
+    incorrect: int
+    score: float
+    passed: bool
 
