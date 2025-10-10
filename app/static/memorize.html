@@ -53,9 +53,59 @@
     <main class="memorize-layout">
       <section class="panel memorize-panel">
         <div class="panel-header memorize-panel-header">
-          <div class="memorize-heading">
+          <div class="panel-heading memorize-heading">
             <h2>암기 리스트</h2>
             <p class="panel-subtitle" id="memorize-subtitle">폴더와 그룹을 선택하세요.</p>
+          </div>
+          <div class="panel-controls memorize-controls">
+            <div class="memorize-toggle-group">
+              <button id="toggle-term" class="secondary" type="button" disabled>단어 가리기</button>
+              <button id="toggle-meaning" class="secondary" type="button" disabled>뜻 가리기</button>
+            </div>
+            <form id="memorize-range-form" class="memorize-range-form" novalidate>
+              <label class="range-label">
+                번호 범위
+                <span class="range-inputs">
+                  <input
+                    type="number"
+                    id="memorize-range-start"
+                    min="1"
+                    inputmode="numeric"
+                    placeholder="시작"
+                    disabled
+                  />
+                  <span class="range-separator">~</span>
+                  <input
+                    type="number"
+                    id="memorize-range-end"
+                    min="1"
+                    inputmode="numeric"
+                    placeholder="끝"
+                    disabled
+                  />
+                </span>
+              </label>
+              <button type="submit" class="secondary" disabled>설정</button>
+            </form>
+            <fieldset class="audio-language-control">
+              <legend>발음 언어</legend>
+              <label>
+                <input type="radio" name="audio-language" value="auto" checked />
+                자동
+              </label>
+              <label>
+                <input type="radio" name="audio-language" value="en-US" />
+                영어
+              </label>
+              <label>
+                <input type="radio" name="audio-language" value="ko-KR" />
+                한글
+              </label>
+              <label>
+                <input type="radio" name="audio-language" value="zh-CN" />
+                한자
+              </label>
+            </fieldset>
           </div>
         </div>
 
@@ -74,57 +124,6 @@
               </select>
             </label>
           </div>
-        </div>
-
-        <div class="memorize-toggle-row">
-          <div class="memorize-toggle-group">
-            <button id="toggle-term" class="secondary" type="button" disabled>단어 가리기</button>
-            <button id="toggle-meaning" class="secondary" type="button" disabled>뜻 가리기</button>
-          </div>
-          <form id="memorize-range-form" class="memorize-range-form" novalidate>
-            <label class="range-label">
-              번호 범위
-              <span class="range-inputs">
-                <input
-                  type="number"
-                  id="memorize-range-start"
-                  min="1"
-                  inputmode="numeric"
-                  placeholder="시작"
-                  disabled
-                />
-                <span class="range-separator">~</span>
-                <input
-                  type="number"
-                  id="memorize-range-end"
-                  min="1"
-                  inputmode="numeric"
-                  placeholder="끝"
-                  disabled
-                />
-              </span>
-            </label>
-            <button type="submit" class="secondary" disabled>설정</button>
-          </form>
-          <fieldset class="audio-language-control">
-            <legend>발음 언어</legend>
-            <label>
-              <input type="radio" name="audio-language" value="auto" checked />
-              자동
-            </label>
-            <label>
-              <input type="radio" name="audio-language" value="en-US" />
-              영어
-            </label>
-            <label>
-              <input type="radio" name="audio-language" value="ko-KR" />
-              한글
-            </label>
-            <label>
-              <input type="radio" name="audio-language" value="zh-CN" />
-              한자
-            </label>
-          </fieldset>
         </div>
 
         <div id="memorize-table-container" class="table-wrapper memorize-table">

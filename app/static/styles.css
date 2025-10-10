@@ -212,6 +212,8 @@ main.import-layout {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
   margin-top: 0.5rem;
 }
 
@@ -447,7 +449,8 @@ main.import-layout {
 
 .market-group-toolbar {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1.5rem;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
@@ -455,7 +458,9 @@ main.import-layout {
 }
 
 .market-group-toolbar .form-description {
-  margin: 0;
+  margin: 0 0 0 auto;
+  text-align: right;
+  flex: 1 1 220px;
 }
 
 .market-actions {
@@ -473,6 +478,16 @@ main.import-layout {
 @media (max-width: 1024px) {
   main.market-layout {
     grid-template-columns: 1fr;
+  }
+
+  .market-group-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .market-group-toolbar .form-description {
+    margin: 0;
+    text-align: left;
   }
 
   .market-bulk-actions {
@@ -952,9 +967,7 @@ main.memorize-layout .panel {
 }
 
 .memorize-panel-header {
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .memorize-heading {
@@ -963,20 +976,15 @@ main.memorize-layout .panel {
   gap: 0.25rem;
 }
 
+.memorize-controls {
+  padding: 0.25rem 0;
+}
+
 .memorize-toggle-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: flex-start;
-}
-
-.memorize-toggle-row {
-  padding: 0.25rem 1.25rem 1rem;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .memorize-range-form {
@@ -1011,7 +1019,6 @@ main.memorize-layout .panel {
 
 .audio-language-control {
   margin: 0;
-  margin-right: auto;
   border: 1px solid rgba(59, 130, 246, 0.35);
   background: rgba(59, 130, 246, 0.08);
   border-radius: 999px;
@@ -1021,7 +1028,6 @@ main.memorize-layout .panel {
   padding: 0.45rem 0.85rem;
   min-height: 2.25rem;
   flex-wrap: wrap;
-  order: -1;
 }
 
 .audio-language-control legend {
@@ -1221,11 +1227,28 @@ main.memorize-layout .panel {
   justify-content: space-between;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  flex-wrap: wrap;
+  row-gap: 0.75rem;
 }
 
 .panel-header h2 {
   margin: 0;
   font-size: 1.2rem;
+}
+
+.panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.panel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-left: auto;
 }
 
 .panel-subtitle {
@@ -2212,13 +2235,14 @@ body.modal-open {
     max-height: calc(100vh - 14rem);
   }
 
-  .memorize-toggle-row {
+  .memorize-controls {
     justify-content: flex-start;
+    width: 100%;
   }
 
   .memorize-toggle-group {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .memorize-toggle-group button {
