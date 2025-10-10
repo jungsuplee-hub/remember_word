@@ -69,6 +69,32 @@ class Profile(Base):
     sessions = relationship("QuizSession", back_populates="profile", cascade="all,delete")
     folders = relationship("Folder", back_populates="profile", cascade="all,delete")
     groups = relationship("Group", back_populates="profile", cascade="all,delete")
+    social_accounts = relationship(
+        "SocialAccount",
+        back_populates="profile",
+        cascade="all, delete-orphan",
+    )
+
+
+class SocialAccount(Base):
+    __tablename__ = "social_accounts"
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    provider = Column(String, nullable=False)
+    provider_account_id = Column(String, nullable=False)
+    email = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    profile = relationship("Profile", back_populates="social_accounts")
+
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_account_id", name="uq_social_provider_account"),
+    )
 
 
 class QuizSession(Base):

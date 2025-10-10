@@ -1,6 +1,7 @@
 const registerForm = document.querySelector('#register-form');
 const registerFeedback = document.querySelector('#register-feedback');
 const toast = document.querySelector('#toast');
+const socialButtons = document.querySelectorAll('[data-social-login]');
 
 function showToast(message, type = 'info') {
   if (!toast) return;
@@ -23,6 +24,16 @@ function getNextUrl() {
     return next;
   }
   return '/';
+}
+
+function startSocialLogin(provider) {
+  if (!provider) return;
+  const nextUrl = getNextUrl();
+  const target = new URL(`/auth/oauth/${provider}`, window.location.origin);
+  if (nextUrl) {
+    target.searchParams.set('next', nextUrl);
+  }
+  window.location.href = target.toString();
 }
 
 async function handleRegister(event) {
@@ -101,6 +112,12 @@ async function redirectIfLoggedIn() {
 
 if (registerForm) {
   registerForm.addEventListener('submit', handleRegister);
+}
+
+if (socialButtons.length) {
+  socialButtons.forEach((button) => {
+    button.addEventListener('click', () => startSocialLogin(button.dataset.socialLogin));
+  });
 }
 
 document.addEventListener('DOMContentLoaded', redirectIfLoggedIn);

@@ -1236,6 +1236,69 @@ tbody tr:hover {
   color: #15803d;
 }
 
+.social-login {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.social-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.social-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: #ffffff;
+  color: #1f2937;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.social-button span {
+  font-size: 1.15rem;
+}
+
+.social-button:hover,
+.social-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px -14px rgba(15, 23, 42, 0.55);
+}
+
+.social-button.google {
+  border-color: rgba(66, 133, 244, 0.45);
+}
+
+.social-button.kakao {
+  border-color: rgba(244, 229, 76, 0.6);
+}
+
+.social-button.naver {
+  border-color: rgba(3, 199, 90, 0.5);
+}
+
+.social-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 .auth-hint {
   margin: 0.5rem 0 0;
   font-size: 0.85rem;
