@@ -39,6 +39,35 @@ const resultTitle = document.querySelector('#exam-session-result-title');
 const resultMessage = document.querySelector('#exam-session-result-message');
 const resultCloseBtn = document.querySelector('#exam-session-result-close');
 const resultRetryBtn = document.querySelector('#exam-session-result-retry');
+const userGreeting = document.querySelector('#user-greeting');
+const adminLink = document.querySelector('#admin-link');
+const logoutButton = document.querySelector('#logout-button');
+const passwordLink = document.querySelector('#password-link');
+const sessionManager = window.Session;
+
+function updateUserMenu(user) {
+  if (!user) return;
+  if (userGreeting) {
+    userGreeting.textContent = `${user.name}님`;
+  }
+  if (adminLink) {
+    adminLink.hidden = !user.is_admin;
+  }
+  if (passwordLink) {
+    passwordLink.hidden = false;
+  }
+}
+
+if (sessionManager) {
+  sessionManager.subscribe(updateUserMenu);
+}
+
+if (logoutButton && sessionManager) {
+  logoutButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    sessionManager.logout();
+  });
+}
 
 function showToast(message, type = 'info') {
   if (!toast) return;
@@ -510,7 +539,10 @@ function handleGlobalKeydown(event) {
   }
 }
 
-function init() {
+async function init() {
+  if (sessionManager) {
+    await sessionManager.ensureAuthenticated();
+  }
   resetQuizState();
   showPlaceholder('시험을 준비 중입니다...');
   const payload = consumePendingExamPayload();
@@ -552,7 +584,15 @@ if (resultModal) {
 document.addEventListener('keydown', handleGlobalKeydown);
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => {
+    init().catch((error) => {
+      console.error(error);
+      showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
+    });
+  });
 } else {
-  init();
+  init().catch((error) => {
+    console.error(error);
+    showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
+  });
 }

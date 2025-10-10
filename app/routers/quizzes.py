@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
 import random
+from utils.auth import require_current_user
 
 router = APIRouter()
 
@@ -53,14 +54,21 @@ def _quiz_progress(session: models.QuizSession, db: Session) -> schemas.QuizProg
 
 
 @router.post("/start", response_model=schemas.QuizStartResponse)
-def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db)):
+def start_quiz(
+    payload: schemas.QuizStartRequest,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
     group_ids = payload.group_ids or []
     if not group_ids:
         raise HTTPException(400, "시험을 시작할 그룹을 선택하세요.")
 
     groups = (
         db.query(models.Group)
-        .filter(models.Group.id.in_(group_ids))
+        .filter(
+            models.Group.id.in_(group_ids),
+            models.Group.profile_id == current_user.id,
+        )
         .all()
     )
     if len(groups) != len(group_ids):
@@ -99,7 +107,7 @@ def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db))
         raise HTTPException(400, "선택한 조건에 해당하는 단어가 없습니다.")
 
     session = models.QuizSession(
-        profile_id=payload.profile_id,
+        profile_id=current_user.id,
         group_id=primary_group_id,
         direction=payload.direction,
         mode=payload.mode,
@@ -157,8 +165,20 @@ def start_quiz(payload: schemas.QuizStartRequest, db: Session = Depends(get_db))
 
 
 @router.post("/{session_id}/answer", response_model=schemas.QuizProgress)
-def submit_answer(session_id: int, payload: schemas.QuizAnswerSubmit, db: Session = Depends(get_db)):
-    session = db.query(models.QuizSession).filter(models.QuizSession.id == session_id).one_or_none()
+def submit_answer(
+    session_id: int,
+    payload: schemas.QuizAnswerSubmit,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    session = (
+        db.query(models.QuizSession)
+        .filter(
+            models.QuizSession.id == session_id,
+            models.QuizSession.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
     if not session:
         raise HTTPException(404, "시험 세션을 찾을 수 없습니다.")
 
@@ -205,16 +225,39 @@ def submit_answer(session_id: int, payload: schemas.QuizAnswerSubmit, db: Sessio
 
 
 @router.get("/{session_id}/progress", response_model=schemas.QuizProgress)
-def get_progress(session_id: int, db: Session = Depends(get_db)):
-    session = db.query(models.QuizSession).filter(models.QuizSession.id == session_id).one_or_none()
+def get_progress(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    session = (
+        db.query(models.QuizSession)
+        .filter(
+            models.QuizSession.id == session_id,
+            models.QuizSession.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
     if not session:
         raise HTTPException(404, "시험 세션을 찾을 수 없습니다.")
     return _quiz_progress(session, db)
 
 
 @router.post("/{session_id}/retry", response_model=schemas.QuizStartResponse)
-def retry_incorrect(session_id: int, payload: schemas.QuizRetryRequest | None = None, db: Session = Depends(get_db)):
-    session = db.query(models.QuizSession).filter(models.QuizSession.id == session_id).one_or_none()
+def retry_incorrect(
+    session_id: int,
+    payload: schemas.QuizRetryRequest | None = None,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    session = (
+        db.query(models.QuizSession)
+        .filter(
+            models.QuizSession.id == session_id,
+            models.QuizSession.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
     if not session:
         raise HTTPException(404, "시험 세션을 찾을 수 없습니다.")
 
@@ -242,7 +285,7 @@ def retry_incorrect(session_id: int, payload: schemas.QuizRetryRequest | None = 
         ordered_questions.sort(key=lambda q: q.position)
 
     new_session = models.QuizSession(
-        profile_id=session.profile_id,
+        profile_id=current_user.id,
         group_id=session.group_id,
         direction=session.direction,
         mode=session.mode,
@@ -294,8 +337,19 @@ def retry_incorrect(session_id: int, payload: schemas.QuizRetryRequest | None = 
 
 
 @router.delete("/{session_id}", status_code=204)
-def delete_session(session_id: int, db: Session = Depends(get_db)):
-    session = db.query(models.QuizSession).filter(models.QuizSession.id == session_id).one_or_none()
+def delete_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    session = (
+        db.query(models.QuizSession)
+        .filter(
+            models.QuizSession.id == session_id,
+            models.QuizSession.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
     if not session:
         raise HTTPException(404, "시험 세션을 찾을 수 없습니다.")
     db.delete(session)
@@ -304,9 +358,14 @@ def delete_session(session_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/history", response_model=list[schemas.QuizHistoryItem])
-def list_history(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def list_history(
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
     sessions = (
         db.query(models.QuizSession)
+        .filter(models.QuizSession.profile_id == current_user.id)
         .order_by(models.QuizSession.created_at.desc())
         .limit(limit)
         .all()
@@ -327,7 +386,10 @@ def list_history(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get
         .join(models.Word, models.Word.id == models.QuizQuestion.word_id)
         .join(models.Group, models.Group.id == models.Word.group_id)
         .join(models.Folder, models.Folder.id == models.Group.folder_id)
-        .filter(models.QuizQuestion.session_id.in_(session_ids))
+        .filter(
+            models.QuizQuestion.session_id.in_(session_ids),
+            models.Group.profile_id == current_user.id,
+        )
         .all()
     )
 

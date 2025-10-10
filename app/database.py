@@ -29,7 +29,7 @@ def ensure_schema() -> None:
         except NoSuchTableError:
             # If the words table is still missing we cannot apply column migrations.
             # ``create_all`` above should normally prevent this path.
-            return
+            columns = set()
 
         if "star" not in columns:
             connection.execute(
@@ -48,6 +48,78 @@ def ensure_schema() -> None:
                 text(
                     "ALTER TABLE quiz_sessions ADD COLUMN is_retry BOOLEAN NOT NULL DEFAULT FALSE"
                 )
+            )
+
+        try:
+            profile_columns = {
+                column["name"] for column in inspector.get_columns("profiles")
+            }
+        except NoSuchTableError:
+            profile_columns = set()
+
+        def add_profile_column(column_name: str, ddl: str) -> None:
+            if column_name not in profile_columns:
+                connection.execute(text(ddl))
+
+        add_profile_column("username", "ALTER TABLE profiles ADD COLUMN username VARCHAR(255)")
+        add_profile_column("password_hash", "ALTER TABLE profiles ADD COLUMN password_hash VARCHAR(255)")
+        add_profile_column(
+            "is_admin",
+            "ALTER TABLE profiles ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE",
+        )
+        add_profile_column(
+            "last_login_at",
+            "ALTER TABLE profiles ADD COLUMN last_login_at TIMESTAMP",
+        )
+        add_profile_column(
+            "login_count",
+            "ALTER TABLE profiles ADD COLUMN login_count INTEGER NOT NULL DEFAULT 0",
+        )
+        add_profile_column(
+            "password_reset_token",
+            "ALTER TABLE profiles ADD COLUMN password_reset_token VARCHAR(255)",
+        )
+        add_profile_column(
+            "password_reset_expires_at",
+            "ALTER TABLE profiles ADD COLUMN password_reset_expires_at TIMESTAMP",
+        )
+
+        if profile_columns and "username" not in profile_columns:
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username)"
+                )
+            )
+
+        if profile_columns and "email" in profile_columns:
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email)"
+                )
+            )
+
+        try:
+            folder_columns = {
+                column["name"] for column in inspector.get_columns("folders")
+            }
+        except NoSuchTableError:
+            folder_columns = set()
+
+        if "profile_id" not in folder_columns:
+            connection.execute(
+                text("ALTER TABLE folders ADD COLUMN profile_id INTEGER REFERENCES profiles(id)")
+            )
+
+        try:
+            group_columns = {
+                column["name"] for column in inspector.get_columns("groups")
+            }
+        except NoSuchTableError:
+            group_columns = set()
+
+        if "profile_id" not in group_columns:
+            connection.execute(
+                text("ALTER TABLE groups ADD COLUMN profile_id INTEGER REFERENCES profiles(id)")
             )
 
 

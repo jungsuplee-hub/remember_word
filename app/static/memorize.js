@@ -20,6 +20,32 @@ const tableContainer = document.querySelector('#memorize-table-container');
 const toggleTermBtn = document.querySelector('#toggle-term');
 const toggleMeaningBtn = document.querySelector('#toggle-meaning');
 const audioLanguageInputs = document.querySelectorAll("input[name='audio-language']");
+const userGreeting = document.querySelector('#user-greeting');
+const adminLink = document.querySelector('#admin-link');
+const logoutButton = document.querySelector('#logout-button');
+const passwordLink = document.querySelector('#password-link');
+
+function updateUserMenu(user) {
+  if (!user) return;
+  if (userGreeting) {
+    userGreeting.textContent = `${user.name}님`;
+  }
+  if (adminLink) {
+    adminLink.hidden = !user.is_admin;
+  }
+  if (passwordLink) {
+    passwordLink.hidden = false;
+  }
+}
+
+Session.subscribe(updateUserMenu);
+
+if (logoutButton) {
+  logoutButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    Session.logout();
+  });
+}
 
 const AUDIO_LANGUAGE_LABELS = {
   auto: '자동',
@@ -648,4 +674,11 @@ toggleMeaningBtn.addEventListener('click', () => {
   renderWords();
 });
 
-fetchFolders();
+Session.ensureAuthenticated()
+  .then(() => fetchFolders())
+  .catch((error) => {
+    if (error.message !== 'unauthenticated') {
+      console.error(error);
+      showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
+    }
+  });

@@ -6,13 +6,31 @@ import pandas as pd
 from io import BytesIO, StringIO
 import math
 from collections import defaultdict
+from utils.auth import require_current_user
 
 router = APIRouter()
 
 @router.post("", response_model=dict)
-def create_word(payload: schemas.WordCreate, db: Session = Depends(get_db)):
+def create_word(
+    payload: schemas.WordCreate,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    group = (
+        db.query(models.Group)
+        .filter(
+            models.Group.id == payload.group_id,
+            models.Group.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
+    if not group:
+        raise HTTPException(404, "그룹을 찾을 수 없습니다.")
+
     w = models.Word(**payload.model_dump())
-    db.add(w); db.commit(); db.refresh(w)
+    db.add(w)
+    db.commit()
+    db.refresh(w)
     return {"id": w.id}
 
 @router.get("", response_model=list[schemas.WordOut])
@@ -21,8 +39,16 @@ def list_words(
     min_star: int | None = Query(default=None, ge=0, le=schemas.MAX_STAR_RATING),
     star_values: list[int] | None = Query(default=None),
     db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
 ):
-    q = db.query(models.Word).filter(models.Word.group_id == group_id)
+    q = (
+        db.query(models.Word)
+        .join(models.Group, models.Group.id == models.Word.group_id)
+        .filter(
+            models.Word.group_id == group_id,
+            models.Group.profile_id == current_user.id,
+        )
+    )
     if min_star is not None:
         q = q.filter(models.Word.star >= min_star)
     if star_values:
@@ -32,13 +58,33 @@ def list_words(
 
 
 @router.patch("/{word_id}", response_model=schemas.WordOut)
-def update_word(word_id: int, payload: schemas.WordUpdate, db: Session = Depends(get_db)):
-    word = db.query(models.Word).filter(models.Word.id == word_id).one_or_none()
+def update_word(
+    word_id: int,
+    payload: schemas.WordUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    word = (
+        db.query(models.Word)
+        .join(models.Group, models.Group.id == models.Word.group_id)
+        .filter(
+            models.Word.id == word_id,
+            models.Group.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
     if not word:
         raise HTTPException(404, "단어를 찾을 수 없습니다.")
     data = payload.model_dump(exclude_unset=True)
     if "group_id" in data and data["group_id"] is not None:
-        group = db.query(models.Group).filter(models.Group.id == data["group_id"]).one_or_none()
+        group = (
+            db.query(models.Group)
+            .filter(
+                models.Group.id == data["group_id"],
+                models.Group.profile_id == current_user.id,
+            )
+            .one_or_none()
+        )
         if not group:
             raise HTTPException(404, "이동할 그룹을 찾을 수 없습니다.")
         word.group_id = data.pop("group_id")
@@ -50,8 +96,20 @@ def update_word(word_id: int, payload: schemas.WordUpdate, db: Session = Depends
 
 
 @router.delete("/{word_id}", response_model=dict)
-def delete_word(word_id: int, db: Session = Depends(get_db)):
-    word = db.query(models.Word).filter(models.Word.id == word_id).one_or_none()
+def delete_word(
+    word_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    word = (
+        db.query(models.Word)
+        .join(models.Group, models.Group.id == models.Word.group_id)
+        .filter(
+            models.Word.id == word_id,
+            models.Group.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
     if not word:
         raise HTTPException(404, "단어를 찾을 수 없습니다.")
 
@@ -104,7 +162,19 @@ async def import_words(
     file: UploadFile | None = File(None),
     clipboard: str | None = Form(None),
     db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
 ):
+    group = (
+        db.query(models.Group)
+        .filter(
+            models.Group.id == group_id,
+            models.Group.profile_id == current_user.id,
+        )
+        .one_or_none()
+    )
+    if not group:
+        raise HTTPException(404, "그룹을 찾을 수 없습니다.")
+
     if not file and not clipboard:
         raise HTTPException(400, "file 또는 clipboard 중 하나를 제공하세요.")
 
@@ -187,6 +257,7 @@ async def import_with_structure(
     file: UploadFile = File(...),
     default_language: str = Form("기본"),
     db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
 ):
     if not file.filename:
         raise HTTPException(400, "업로드할 파일을 선택하세요.")
@@ -308,7 +379,11 @@ async def import_with_structure(
 
     df = try_parse_dataframe()
 
-    folders = db.query(models.Folder).all()
+    folders = (
+        db.query(models.Folder)
+        .filter(models.Folder.profile_id == current_user.id)
+        .all()
+    )
     folder_cache: dict[str, models.Folder] = {
         (f.name or "").strip().lower(): f for f in folders
     }
@@ -341,7 +416,7 @@ async def import_with_structure(
         folder_key = folder_name.lower()
         folder = folder_cache.get(folder_key)
         if not folder:
-            folder = models.Folder(name=folder_name)
+            folder = models.Folder(name=folder_name, profile_id=current_user.id)
             db.add(folder)
             db.flush()
             folder_cache[folder_key] = folder
@@ -355,11 +430,16 @@ async def import_with_structure(
                 .filter(
                     models.Group.folder_id == folder.id,
                     models.Group.name == group_name,
+                    models.Group.profile_id == current_user.id,
                 )
                 .one_or_none()
             )
             if not group:
-                group = models.Group(folder_id=folder.id, name=group_name)
+                group = models.Group(
+                    folder_id=folder.id,
+                    name=group_name,
+                    profile_id=current_user.id,
+                )
                 db.add(group)
                 db.flush()
                 groups_created += 1

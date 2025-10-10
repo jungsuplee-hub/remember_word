@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, EmailStr, root_validator
 from typing import Optional, List, Literal
 
 
@@ -11,10 +11,46 @@ class ProfileCreate(BaseModel):
     email: Optional[str] = Field(default=None, description="로그인을 위한 이메일")
 
 
-class ProfileOut(BaseModel):
+class LoginRequest(BaseModel):
+    username: str = Field(..., description="로그인 아이디")
+    password: str = Field(..., description="비밀번호")
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(..., description="현재 비밀번호")
+    new_password: str = Field(..., description="새 비밀번호")
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+
+class SessionInfo(BaseModel):
     id: int
+    username: Optional[str]
     name: str
     email: Optional[str]
+    is_admin: bool
+    last_login_at: Optional[datetime]
+    login_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class ProfileOut(BaseModel):
+    id: int
+    username: Optional[str]
+    name: str
+    email: Optional[str]
+    is_admin: bool
+    last_login_at: Optional[datetime]
+    login_count: int
 
     class Config:
         from_attributes = True
@@ -194,4 +230,17 @@ class QuizHistoryItem(BaseModel):
     min_star: Optional[int]
     star_values: List[int] = Field(default_factory=list)
     mode: Optional[str]
+
+
+class AdminAccountStats(BaseModel):
+    profile_id: int
+    username: Optional[str]
+    name: str
+    email: Optional[str]
+    folder_count: int
+    group_count: int
+    word_count: int
+    quiz_count: int
+    login_count: int
+    last_login_at: Optional[datetime]
 
