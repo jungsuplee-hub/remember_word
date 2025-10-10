@@ -14,9 +14,6 @@ const wordTable = document.querySelector('#word-table');
 const groupsSubtitle = document.querySelector('#groups-subtitle');
 const toast = document.querySelector('#toast');
 const minStarSelect = document.querySelector('#word-min-star');
-const importForm = document.querySelector('#import-form');
-const importFileInput = document.querySelector('#import-file');
-const importLanguageInput = document.querySelector('#import-language');
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
@@ -932,42 +929,6 @@ async function deleteWord(wordId) {
   }
 }
 
-async function handleStructuredImport(event) {
-  event.preventDefault();
-  const file = importFileInput.files[0];
-  if (!file) {
-    showToast('업로드할 파일을 선택하세요.', 'error');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('default_language', importLanguageInput.value || '기본');
-
-  try {
-    const res = await fetch('/words/import-structured', {
-      method: 'POST',
-      body: formData,
-    });
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.detail || '가져오기 중 오류가 발생했습니다.');
-    }
-    const summary = await res.json();
-    showToast(`추가 ${summary.inserted}건, 건너뜀 ${summary.skipped}건`);
-    importForm.reset();
-    await fetchFolders();
-    if (state.activeFolderId) {
-      await fetchGroups();
-      if (state.activeGroupId) {
-        await fetchWords();
-      }
-    }
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
 function handleFolderListClick(event) {
   const deleteBtn = event.target.closest('button[data-action="delete"]');
   if (deleteBtn) {
@@ -1021,9 +982,6 @@ async function init() {
   folderList.addEventListener('click', handleFolderListClick);
   groupList.addEventListener('click', handleGroupListClick);
   wordTable.addEventListener('click', handleWordTableClick);
-  if (importForm) {
-    importForm.addEventListener('submit', handleStructuredImport);
-  }
   fetchFolders();
 }
 
