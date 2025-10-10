@@ -34,7 +34,7 @@ const Session = {
   subscribe(callback) {
     if (typeof callback === 'function') {
       this.listeners.add(callback);
-      if (this.user) {
+      if (this.user !== null) {
         callback(this.user);
       }
     }
@@ -60,6 +60,20 @@ const Session = {
 window.Session = Session;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const applyRoleVisibility = (user) => {
+    const requiresAdmin = document.querySelectorAll('[data-requires-admin]');
+    const isAdmin = Boolean(user && user.is_admin);
+    requiresAdmin.forEach((element) => {
+      if (!element) return;
+      element.hidden = !isAdmin;
+      if (isAdmin) {
+        element.removeAttribute('hidden');
+      }
+    });
+  };
+
+  Session.subscribe(applyRoleVisibility);
+
   const isPublic = document.body?.dataset?.public === 'true';
   if (!isPublic) {
     Session.ensureAuthenticated().catch((error) => {
