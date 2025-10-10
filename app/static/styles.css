@@ -2087,6 +2087,8 @@ body.modal-open {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.25rem;
   margin: 0;
+  padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.5rem, 4vw, 2.25rem)
+    clamp(1.75rem, 4vw, 2.5rem);
 }
 
 .account-summary div {
@@ -2115,6 +2117,8 @@ body.modal-open {
   display: grid;
   gap: 1rem;
   max-width: 420px;
+  padding: clamp(1.5rem, 4vw, 2.25rem) clamp(1.5rem, 4vw, 2.25rem)
+    clamp(2rem, 5vw, 2.75rem);
 }
 
 .admin-table tr:hover {
