@@ -18,6 +18,20 @@ def _serialize_star_values(values: list[int] | None) -> str | None:
     return ",".join(str(v) for v in unique_sorted)
 
 
+def _deserialize_star_values(value: str | None) -> list[int]:
+    if not value:
+        return []
+    result: list[int] = []
+    for part in value.split(","):
+        try:
+            number = int(part.strip())
+        except (TypeError, ValueError):
+            continue
+        if number not in result:
+            result.append(number)
+    return result
+
+
 def _quiz_progress(session: models.QuizSession, db: Session) -> schemas.QuizProgress:
     incorrect_rows = (
         db.query(models.QuizQuestion.id)
@@ -295,7 +309,9 @@ def list_history(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get
     group_rows = (
         db.query(
             models.QuizQuestion.session_id,
+            models.Group.id.label("group_id"),
             models.Group.name.label("group_name"),
+            models.Folder.id.label("folder_id"),
             models.Folder.name.label("folder_name"),
         )
         .join(models.Word, models.Word.id == models.QuizQuestion.word_id)
@@ -305,18 +321,26 @@ def list_history(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get
         .all()
     )
 
-    folder_by_session: dict[int, str | None] = {}
-    groups_by_session: dict[int, list[str]] = {}
+    folder_id_by_session: dict[int, int | None] = {}
+    folder_name_by_session: dict[int, str | None] = {}
+    group_ids_by_session: dict[int, list[int]] = {}
+    group_names_by_session: dict[int, list[str]] = {}
 
     for row in group_rows:
         session_id = row.session_id
+        folder_id = row.folder_id
         folder_name = row.folder_name
+        group_id = row.group_id
         group_name = row.group_name
-        if session_id not in folder_by_session:
-            folder_by_session[session_id] = folder_name
-        groups = groups_by_session.setdefault(session_id, [])
-        if group_name and group_name not in groups:
-            groups.append(group_name)
+        if session_id not in folder_id_by_session:
+            folder_id_by_session[session_id] = folder_id
+            folder_name_by_session[session_id] = folder_name
+        ids = group_ids_by_session.setdefault(session_id, [])
+        if group_id and group_id not in ids:
+            ids.append(group_id)
+        names = group_names_by_session.setdefault(session_id, [])
+        if group_name and group_name not in names:
+            names.append(group_name)
 
     history: list[schemas.QuizHistoryItem] = []
     for session in sessions:
@@ -329,13 +353,21 @@ def list_history(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get
             schemas.QuizHistoryItem(
                 session_id=session.id,
                 created_at=session.created_at or datetime.utcnow(),
-                folder_name=folder_by_session.get(session.id),
-                group_names=groups_by_session.get(session.id, []),
+                folder_id=folder_id_by_session.get(session.id),
+                folder_name=folder_name_by_session.get(session.id),
+                group_ids=group_ids_by_session.get(session.id, []),
+                group_names=group_names_by_session.get(session.id, []),
                 total=total,
                 correct=correct,
                 incorrect=incorrect,
                 score=round(score, 1),
                 passed=passed,
+                direction=session.direction,
+                random=session.randomize,
+                limit=session.limit_count,
+                min_star=session.include_star_min,
+                star_values=_deserialize_star_values(session.include_star_values),
+                mode=session.mode,
             )
         )
 
