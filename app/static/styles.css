@@ -397,8 +397,14 @@ main.import-layout {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  flex: 1;
+  flex: 0 1 auto;
+  max-height: clamp(280px, 45vh, 520px);
   overflow-y: auto;
+}
+
+.market-group-list:empty {
+  padding: 0;
+  max-height: none;
 }
 
 .market-group-list .empty {
