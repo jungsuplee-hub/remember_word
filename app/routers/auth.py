@@ -205,7 +205,7 @@ def request_password_reset(
 
     return {
         "status": "reset_requested",
-        "message": "이메일로 비밀번호 재설정 안내를 전송했습니다. (테스트 환경에서는 서버 로그를 확인하세요.)",
+        "message": "이메일로 비밀번호 재설정 안내를 전송했습니다.",
     }
 
 
