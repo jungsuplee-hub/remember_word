@@ -47,11 +47,17 @@ const sessionManager = window.Session;
 
 function updateUserMenu(user) {
   if (!user) return;
+  const isAdmin = sessionManager?.isAdmin
+    ? sessionManager.isAdmin(user)
+    : Boolean(user?.is_admin);
   if (userGreeting) {
     userGreeting.textContent = `${user.name}님`;
   }
   if (adminLink) {
-    adminLink.hidden = !user.is_admin;
+    adminLink.hidden = !isAdmin;
+    if (isAdmin) {
+      adminLink.removeAttribute('hidden');
+    }
   }
   if (accountLink) {
     accountLink.hidden = false;

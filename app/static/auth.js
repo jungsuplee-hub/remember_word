@@ -1,3 +1,19 @@
+const isAdminUser = (user) => {
+  if (!user) return false;
+  const { is_admin: rawIsAdmin } = user;
+  if (typeof rawIsAdmin === 'boolean') {
+    return rawIsAdmin;
+  }
+  if (typeof rawIsAdmin === 'string') {
+    const normalized = rawIsAdmin.trim().toLowerCase();
+    return normalized === 'true' || normalized === '1';
+  }
+  if (typeof rawIsAdmin === 'number') {
+    return rawIsAdmin === 1;
+  }
+  return false;
+};
+
 const Session = {
   user: null,
   listeners: new Set(),
@@ -55,6 +71,9 @@ const Session = {
     this.notify();
     this.redirectToLogin();
   },
+  isAdmin(user = this.user) {
+    return isAdminUser(user);
+  },
 };
 
 window.Session = Session;
@@ -62,7 +81,7 @@ window.Session = Session;
 document.addEventListener('DOMContentLoaded', () => {
   const applyRoleVisibility = (user) => {
     const requiresAdmin = document.querySelectorAll('[data-requires-admin]');
-    const isAdmin = Boolean(user && user.is_admin);
+    const isAdmin = Session.isAdmin(user);
     requiresAdmin.forEach((element) => {
       if (!element) return;
       element.hidden = !isAdmin;
