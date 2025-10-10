@@ -53,8 +53,10 @@
     <main class="exam-layout">
       <section class="panel exam-panel">
         <div class="panel-header">
-          <h2>시험 설정</h2>
-          <span class="panel-subtitle" id="exam-subtitle">폴더와 그룹을 선택한 뒤 시험을 시작하세요.</span>
+          <div class="panel-heading">
+            <h2>시험 설정</h2>
+            <span class="panel-subtitle" id="exam-subtitle">폴더와 그룹을 선택한 뒤 시험을 시작하세요.</span>
+          </div>
         </div>
 
         <form id="exam-form" class="form">
@@ -147,11 +149,13 @@
 
       <aside class="panel exam-history-panel">
         <div class="panel-header exam-history-header">
-          <div class="exam-history-heading">
+          <div class="panel-heading exam-history-heading">
             <h2>시험 이력</h2>
             <span class="panel-subtitle">최근 시험 기록을 확인하세요.</span>
           </div>
-          <button type="button" id="exam-history-refresh" class="secondary">새로고침</button>
+          <div class="panel-controls">
+            <button type="button" id="exam-history-refresh" class="secondary">새로고침</button>
+          </div>
         </div>
         <div class="exam-history-body">
           <p id="exam-history-empty" class="exam-history-empty">아직 시험 이력이 없습니다.</p>
