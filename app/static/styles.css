@@ -514,6 +514,12 @@ main.import-layout {
   }
 }
 
+@media (max-width: 600px) {
+  .market-panel {
+    min-height: 0;
+  }
+}
+
 main.exam-session-layout {
   display: flex;
   justify-content: center;
