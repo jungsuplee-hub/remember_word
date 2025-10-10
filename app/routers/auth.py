@@ -21,6 +21,7 @@ from utils.auth import (
     validate_reset_token,
     verify_password,
 )
+from utils.email import send_password_reset_email
 from utils.oauth import (
     OAuthError,
     build_authorization_redirect,
@@ -199,7 +200,8 @@ def request_password_reset(
         .one_or_none()
     )
     if profile:
-        generate_reset_token(profile, db)
+        token = generate_reset_token(profile, db)
+        send_password_reset_email(profile, token)
 
     return {
         "status": "reset_requested",
