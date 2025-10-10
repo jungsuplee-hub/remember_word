@@ -2317,21 +2317,23 @@ body.modal-open {
     justify-content: flex-start;
   }
 
-  header {
-    text-align: center;
-  }
-
   .header-content {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
   }
 
   .header-actions {
-    justify-content: center;
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .header-links {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .link-button {
-    align-self: center;
+    align-self: flex-start;
   }
 
   .panel {
