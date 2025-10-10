@@ -231,11 +231,102 @@ main.import-layout {
   gap: 0.75rem;
 }
 
+.import-guide-image-button {
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+  border-radius: 8px;
+  display: block;
+  line-height: 0;
+}
+
+.import-guide-image-button:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.65);
+  outline-offset: 4px;
+}
+
 .import-guide-image {
   width: 100%;
   border-radius: 8px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
   object-fit: contain;
+}
+
+.import-image-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.7);
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.import-image-modal[hidden] {
+  display: none;
+}
+
+.import-image-modal.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.import-image-modal-dialog {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: min(960px, 95vw);
+  width: 100%;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.import-image-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.import-image-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.import-image-modal-close {
+  border: none;
+  background: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #0f172a;
+  padding: 0.25rem;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.import-image-modal-close:hover,
+.import-image-modal-close:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.import-image-modal-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-image-modal-image {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.24);
 }
 
 .import-guide-figure figcaption {
