@@ -369,6 +369,120 @@ function showSummary() {
   updateSubtitle();
 }
 
+async function retakeExamFromHistory(item) {
+  if (!item) {
+    showToast('시험 정보를 찾을 수 없습니다.', 'error');
+    return false;
+  }
+
+  if (state.quiz.active) {
+    showToast('현재 진행 중인 시험을 먼저 마치거나 초기화하세요.', 'error');
+    return false;
+  }
+
+  if (item.folder_id == null) {
+    showToast('폴더 정보를 찾을 수 없습니다.', 'error');
+    return false;
+  }
+
+  const folderId = Number(item.folder_id);
+  if (!Number.isInteger(folderId) || folderId <= 0) {
+    showToast('폴더 정보를 찾을 수 없습니다.', 'error');
+    return false;
+  }
+
+  const rawGroupIds = Array.isArray(item.group_ids) ? item.group_ids : [];
+  const groupIds = Array.from(
+    new Set(
+      rawGroupIds
+        .filter((value) => value !== null && value !== undefined)
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0),
+    ),
+  );
+
+  if (!groupIds.length) {
+    showToast('시험에 필요한 그룹 정보를 찾을 수 없습니다.', 'error');
+    return false;
+  }
+
+  state.activeFolderId = folderId;
+  state.selectedGroupIds = groupIds;
+  await fetchFolders();
+
+  const folderExists = state.folders.some((folder) => folder.id === folderId);
+  if (!folderExists) {
+    showToast('폴더 정보를 불러올 수 없습니다.', 'error');
+    return false;
+  }
+
+  if (!state.selectedGroupIds.length) {
+    showToast('선택한 그룹을 찾을 수 없습니다.', 'error');
+    return false;
+  }
+
+  renderFolders();
+  if (folderSelect) {
+    folderSelect.value = String(folderId);
+  }
+  renderGroups();
+  updateSubtitle();
+
+  const limitInput = form.querySelector('input[name="limit"]');
+  if (limitInput) {
+    limitInput.value = item.limit != null ? String(item.limit) : '';
+  }
+
+  const directionSelect = form.querySelector('select[name="direction"]');
+  if (directionSelect && item.direction) {
+    directionSelect.value = item.direction;
+  }
+
+  const minStarSelect = form.querySelector('select[name="min_star"]');
+  if (minStarSelect) {
+    minStarSelect.value = item.min_star != null ? String(item.min_star) : '';
+  }
+
+  const randomCheckbox = form.querySelector('input[name="random"]');
+  if (randomCheckbox) {
+    randomCheckbox.checked = item.random !== false;
+  }
+
+  const payload = {
+    folder_id: folderId,
+    group_id: state.selectedGroupIds[0],
+    group_ids: [...state.selectedGroupIds],
+    random: item.random !== false,
+    direction: item.direction || 'term_to_meaning',
+    mode: item.mode || 'exam',
+  };
+
+  if (item.limit != null) {
+    const value = Number(item.limit);
+    if (Number.isInteger(value)) {
+      payload.limit = value;
+    }
+  }
+
+  if (item.min_star != null) {
+    const value = Number(item.min_star);
+    if (Number.isInteger(value)) {
+      payload.min_star = value;
+    }
+  }
+
+  if (Array.isArray(item.star_values) && item.star_values.length) {
+    const values = item.star_values
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value));
+    if (values.length) {
+      payload.star_values = values;
+    }
+  }
+
+  return startExam(payload, { toastMessage: '이전 시험을 다시 시작합니다.' });
+}
+
 function renderHistory(items) {
   if (!historyList || !historyEmpty) return;
   historyList.innerHTML = '';
@@ -420,10 +534,30 @@ function renderHistory(items) {
     const correct = Number(item.correct) || 0;
     stats.textContent = `${total}문제 중 ${incorrect}문제를 틀렸습니다. (정답 ${correct}개)`;
 
+    const actions = document.createElement('div');
+    actions.className = 'exam-history-item-actions';
+
+    const retakeBtn = document.createElement('button');
+    retakeBtn.type = 'button';
+    retakeBtn.className = 'secondary';
+    retakeBtn.textContent = '시험 다시보기';
+    retakeBtn.addEventListener('click', async () => {
+      if (retakeBtn.disabled) return;
+      retakeBtn.disabled = true;
+      try {
+        await retakeExamFromHistory(item);
+      } finally {
+        retakeBtn.disabled = false;
+      }
+    });
+
+    actions.appendChild(retakeBtn);
+
     li.appendChild(header);
     li.appendChild(meta);
     li.appendChild(groupsEl);
     li.appendChild(stats);
+    li.appendChild(actions);
 
     historyList.appendChild(li);
   });
@@ -497,6 +631,43 @@ async function fetchGroups(folderId) {
   }
 }
 
+async function startExam(payload, options = {}) {
+  const { toastMessage = '시험을 시작합니다.' } = options;
+
+  state.quiz.active = true;
+  state.quiz.completed = false;
+  updateSubtitle();
+  content.classList.add('hidden');
+  summaryEl.classList.add('hidden');
+
+  let success = false;
+  try {
+    const result = await api('/quizzes/start', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    state.quiz.sessionId = result.session_id;
+    state.quiz.questions = result.questions || [];
+    state.quiz.index = 0;
+    state.quiz.progress = {
+      session_id: result.session_id,
+      total: result.total,
+      answered: 0,
+      correct: 0,
+      remaining: result.total,
+      incorrect_question_ids: [],
+    };
+    showQuestion();
+    showToast(toastMessage);
+    success = true;
+  } catch (err) {
+    resetQuizState({ preserveLastResult: true });
+    showToast(err.message, 'error');
+  }
+
+  return success;
+}
+
 async function handleStart(event) {
   event.preventDefault();
   if (!state.activeFolderId) {
@@ -522,35 +693,7 @@ async function handleStart(event) {
   if (limit) payload.limit = Number(limit);
   const minStar = formData.get('min_star');
   if (minStar) payload.min_star = Number(minStar);
-
-  state.quiz.active = true;
-  state.quiz.completed = false;
-  updateSubtitle();
-  content.classList.add('hidden');
-  summaryEl.classList.add('hidden');
-
-  try {
-    const result = await api('/quizzes/start', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    state.quiz.sessionId = result.session_id;
-    state.quiz.questions = result.questions || [];
-    state.quiz.index = 0;
-    state.quiz.progress = {
-      session_id: result.session_id,
-      total: result.total,
-      answered: 0,
-      correct: 0,
-      remaining: result.total,
-      incorrect_question_ids: [],
-    };
-    showQuestion();
-    showToast('시험을 시작합니다.');
-  } catch (err) {
-    resetQuizState({ preserveLastResult: true });
-    showToast(err.message, 'error');
-  }
+  await startExam(payload);
 }
 
 async function submitResult(isCorrect) {

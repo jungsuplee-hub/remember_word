@@ -179,11 +179,19 @@ class QuizRetryRequest(BaseModel):
 class QuizHistoryItem(BaseModel):
     session_id: int
     created_at: datetime
+    folder_id: Optional[int]
     folder_name: Optional[str]
+    group_ids: List[int] = Field(default_factory=list)
     group_names: List[str] = Field(default_factory=list)
     total: int
     correct: int
     incorrect: int
     score: float
     passed: bool
+    direction: str
+    random: bool
+    limit: Optional[int]
+    min_star: Optional[int]
+    star_values: List[int] = Field(default_factory=list)
+    mode: Optional[str]
 

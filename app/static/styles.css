@@ -236,6 +236,19 @@ main.exam-layout .panel {
   font-weight: 500;
 }
 
+.exam-history-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.exam-history-item-actions button {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+}
+
 .modal {
   position: fixed;
   inset: 0;
