@@ -6,6 +6,9 @@ const state = {
   groups: [],
   activeFolderId: null,
   selectedGroupIds: [],
+  rangeStart: null,
+  rangeEnd: null,
+  rangeGroupId: null,
 };
 
 const toast = document.querySelector('#toast');
@@ -24,6 +27,9 @@ const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
 const accountLink = document.querySelector('#account-link');
+const rangeContainer = document.querySelector('#exam-range-container');
+const rangeStartInput = document.querySelector('#exam-range-start');
+const rangeEndInput = document.querySelector('#exam-range-end');
 
 function updateUserMenu(user) {
   if (!user) return;
@@ -205,6 +211,7 @@ function renderGroups() {
     message.textContent = '폴더를 먼저 선택하세요.';
     groupsContainer.appendChild(message);
     updateGroupActionButtons();
+    updateRangeVisibility();
     return;
   }
 
@@ -214,6 +221,7 @@ function renderGroups() {
     message.textContent = '선택할 그룹이 없습니다.';
     groupsContainer.appendChild(message);
     updateGroupActionButtons();
+    updateRangeVisibility();
     return;
   }
 
@@ -235,6 +243,7 @@ function renderGroups() {
   });
 
   updateGroupActionButtons();
+  updateRangeVisibility();
 }
 
 function getSelectedGroupNames() {
@@ -263,6 +272,9 @@ function handleFolderChange(event) {
   const folderId = Number(event.target.value) || null;
   state.activeFolderId = folderId;
   state.selectedGroupIds = [];
+  state.rangeStart = null;
+  state.rangeEnd = null;
+  state.rangeGroupId = null;
   fetchGroups(folderId);
 }
 
@@ -277,6 +289,7 @@ function handleGroupSelectionChange() {
       .map((checkbox) => Number(checkbox.value));
   }
   updateSubtitle();
+  updateRangeVisibility();
 }
 
 function handleSelectAllGroups() {
@@ -288,6 +301,9 @@ function handleSelectAllGroups() {
 
 function handleClearGroupSelection() {
   state.selectedGroupIds = [];
+  state.rangeStart = null;
+  state.rangeEnd = null;
+  state.rangeGroupId = null;
   renderGroups();
   updateSubtitle();
 }
@@ -317,6 +333,9 @@ async function fetchGroups(folderId) {
   if (!folderId) {
     state.groups = [];
     state.selectedGroupIds = [];
+    state.rangeStart = null;
+    state.rangeEnd = null;
+    state.rangeGroupId = null;
     renderGroups();
     updateSubtitle();
     return;
@@ -327,6 +346,11 @@ async function fetchGroups(folderId) {
     const availableIds = state.groups.map((group) => group.id);
     const preserved = state.selectedGroupIds.filter((id) => availableIds.includes(id));
     state.selectedGroupIds = preserved;
+    if (preserved.length !== 1) {
+      state.rangeStart = null;
+      state.rangeEnd = null;
+      state.rangeGroupId = preserved.length === 1 ? preserved[0] : null;
+    }
     renderGroups();
     updateSubtitle();
   } catch (err) {
@@ -348,7 +372,92 @@ function buildStartPayload(formData) {
   if (limit) payload.limit = Number(limit);
   const minStar = formData.get('min_star');
   if (minStar) payload.min_star = Number(minStar);
+  if (selectedIds.length === 1) {
+    const start = parseRangeForRequest(state.rangeStart);
+    const end = parseRangeForRequest(state.rangeEnd);
+    if (start != null) payload.number_start = start;
+    if (end != null) payload.number_end = end;
+  }
   return payload;
+}
+
+function parseRangeForRequest(value) {
+  if (value == null) return null;
+  if (!Number.isInteger(value)) return null;
+  if (value <= 0) return null;
+  return value;
+}
+
+function validateRangeState() {
+  const start = state.rangeStart;
+  const end = state.rangeEnd;
+
+  if (start != null && (!Number.isInteger(start) || start <= 0)) {
+    return { valid: false, message: '시작 번호는 1 이상의 정수로 입력하세요.' };
+  }
+
+  if (end != null && (!Number.isInteger(end) || end <= 0)) {
+    return { valid: false, message: '끝 번호는 1 이상의 정수로 입력하세요.' };
+  }
+
+  if (start == null && end == null) {
+    return { valid: true };
+  }
+
+  const normalizedStart = start ?? 1;
+  const normalizedEnd = end ?? Number.MAX_SAFE_INTEGER;
+
+  if (normalizedStart > normalizedEnd) {
+    return { valid: false, message: '시작 번호는 끝 번호보다 클 수 없습니다.' };
+  }
+
+  return { valid: true };
+}
+
+function resetRangeInputs() {
+  if (rangeStartInput) rangeStartInput.value = '';
+  if (rangeEndInput) rangeEndInput.value = '';
+}
+
+function updateRangeVisibility() {
+  if (!rangeContainer || !rangeStartInput || !rangeEndInput) return;
+  const singleGroupSelected = state.selectedGroupIds.length === 1;
+
+  if (singleGroupSelected) {
+    const groupId = state.selectedGroupIds[0];
+    const isDifferentGroup = state.rangeGroupId !== groupId;
+    if (isDifferentGroup) {
+      state.rangeStart = null;
+      state.rangeEnd = null;
+      state.rangeGroupId = groupId;
+    }
+    rangeContainer.hidden = false;
+    rangeStartInput.disabled = false;
+    rangeEndInput.disabled = false;
+    rangeStartInput.value = state.rangeStart != null ? String(state.rangeStart) : '';
+    rangeEndInput.value = state.rangeEnd != null ? String(state.rangeEnd) : '';
+  } else {
+    rangeContainer.hidden = true;
+    rangeStartInput.disabled = true;
+    rangeEndInput.disabled = true;
+    resetRangeInputs();
+    state.rangeStart = null;
+    state.rangeEnd = null;
+    state.rangeGroupId = null;
+  }
+}
+
+function handleRangeInput(event) {
+  if (!event?.target) return;
+  const raw = event.target.value.trim();
+  const parsed = raw ? Number(raw) : null;
+  const normalized = Number.isFinite(parsed) ? parsed : null;
+
+  if (event.target === rangeStartInput) {
+    state.rangeStart = normalized;
+  } else if (event.target === rangeEndInput) {
+    state.rangeEnd = normalized;
+  }
 }
 
 async function handleStart(event) {
@@ -360,6 +469,13 @@ async function handleStart(event) {
   if (!state.selectedGroupIds.length) {
     showToast('시험을 시작할 그룹을 선택하세요.', 'error');
     return;
+  }
+  if (state.selectedGroupIds.length === 1) {
+    const { valid, message } = validateRangeState();
+    if (!valid) {
+      showToast(message, 'error');
+      return;
+    }
   }
   const formData = new FormData(event.currentTarget);
   const payload = buildStartPayload(formData);
@@ -528,6 +644,12 @@ async function init() {
   }
   if (clearSelectionBtn) {
     clearSelectionBtn.addEventListener('click', handleClearGroupSelection);
+  }
+  if (rangeStartInput) {
+    rangeStartInput.addEventListener('input', handleRangeInput);
+  }
+  if (rangeEndInput) {
+    rangeEndInput.addEventListener('input', handleRangeInput);
   }
   if (historyRefreshBtn) {
     historyRefreshBtn.addEventListener('click', () => fetchHistory());

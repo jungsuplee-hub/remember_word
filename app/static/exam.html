@@ -110,6 +110,29 @@
             ></div>
             <p id="exam-group-help" class="form-description">같은 폴더 안의 여러 그룹을 선택해 시험을 볼 수 있습니다.</p>
           </div>
+          <div id="exam-range-container" class="exam-range-block" hidden>
+            <label class="range-label">
+              번호 범위
+              <span class="range-inputs">
+                <input
+                  type="number"
+                  id="exam-range-start"
+                  min="1"
+                  inputmode="numeric"
+                  placeholder="시작"
+                />
+                <span class="range-separator">~</span>
+                <input
+                  type="number"
+                  id="exam-range-end"
+                  min="1"
+                  inputmode="numeric"
+                  placeholder="끝"
+                />
+              </span>
+            </label>
+            <p class="form-description">선택한 그룹의 번호를 기준으로 해당 범위의 단어만 시험에 포함합니다.</p>
+          </div>
           <button type="submit">시험 시작</button>
         </form>
         <p class="exam-session-note">

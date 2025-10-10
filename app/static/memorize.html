@@ -76,6 +76,31 @@
             <button id="toggle-term" class="secondary" type="button" disabled>단어 가리기</button>
             <button id="toggle-meaning" class="secondary" type="button" disabled>뜻 가리기</button>
           </div>
+          <form id="memorize-range-form" class="memorize-range-form" novalidate>
+            <label class="range-label">
+              번호 범위
+              <span class="range-inputs">
+                <input
+                  type="number"
+                  id="memorize-range-start"
+                  min="1"
+                  inputmode="numeric"
+                  placeholder="시작"
+                  disabled
+                />
+                <span class="range-separator">~</span>
+                <input
+                  type="number"
+                  id="memorize-range-end"
+                  min="1"
+                  inputmode="numeric"
+                  placeholder="끝"
+                  disabled
+                />
+              </span>
+            </label>
+            <button type="submit" class="secondary" disabled>설정</button>
+          </form>
           <fieldset class="audio-language-control">
             <legend>발음 언어</legend>
             <label>
@@ -101,13 +126,14 @@
           <table>
             <thead>
               <tr>
+                <th class="number-column">번호</th>
                 <th>단어</th>
                 <th>뜻</th>
               </tr>
             </thead>
             <tbody id="memorize-word-table">
               <tr>
-                <td colspan="2" class="empty">폴더와 그룹을 선택하면 단어가 표시됩니다.</td>
+                <td colspan="3" class="empty">폴더와 그룹을 선택하면 단어가 표시됩니다.</td>
               </tr>
             </tbody>
           </table>
