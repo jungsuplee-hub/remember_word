@@ -4,6 +4,11 @@ const toast = document.querySelector('#toast');
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
+const accountName = document.querySelector('#account-name');
+const accountUsername = document.querySelector('#account-username');
+const accountEmail = document.querySelector('#account-email');
+const accountLastLogin = document.querySelector('#account-last-login');
+const accountLoginCount = document.querySelector('#account-login-count');
 const sessionManager = window.Session;
 
 function showToast(message, type = 'info') {
@@ -20,6 +25,27 @@ function setFeedback(message, type = 'info') {
   passwordFeedback.dataset.type = type;
 }
 
+function formatDateTime(value) {
+  if (!value) return '-';
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString('ko-KR');
+  } catch (error) {
+    console.error('날짜 형식 변환 실패', error);
+    return '-';
+  }
+}
+
+function updateAccountSummary(user) {
+  if (!user) return;
+  if (accountName) accountName.textContent = user.name || '-';
+  if (accountUsername) accountUsername.textContent = user.username || '-';
+  if (accountEmail) accountEmail.textContent = user.email || '-';
+  if (accountLastLogin) accountLastLogin.textContent = formatDateTime(user.last_login_at);
+  if (accountLoginCount) accountLoginCount.textContent = `${user.login_count ?? 0}회`;
+}
+
 function updateUserMenu(user) {
   if (!user) return;
   if (userGreeting) {
@@ -28,6 +54,7 @@ function updateUserMenu(user) {
   if (adminLink) {
     adminLink.hidden = !user.is_admin;
   }
+  updateAccountSummary(user);
 }
 
 if (sessionManager) {
@@ -81,7 +108,8 @@ async function handlePasswordChange(event) {
 
 async function init() {
   if (sessionManager) {
-    await sessionManager.ensureAuthenticated();
+    const user = await sessionManager.ensureAuthenticated();
+    updateAccountSummary(user);
   }
 }
 

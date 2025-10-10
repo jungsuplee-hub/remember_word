@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remember Word - 회원가입</title>
+    <link rel="icon" type="image/x-icon" href="/images/remember_word_log.ico" />
+    <link rel="icon" type="image/png" href="/images/remember_word_log.png" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body data-public="true" class="auth-page">
+    <main class="auth-container">
+      <section class="auth-card">
+        <div class="auth-card-header">
+          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="auth-logo" />
+          <h1>Remember Word 회원가입</h1>
+        </div>
+        <form id="register-form" class="auth-form">
+          <label>
+            아이디
+            <input type="text" name="username" autocomplete="username" minlength="3" maxlength="50" required />
+          </label>
+          <label>
+            이름
+            <input type="text" name="name" autocomplete="name" maxlength="100" required />
+          </label>
+          <label>
+            이메일 (선택)
+            <input type="email" name="email" autocomplete="email" />
+          </label>
+          <label>
+            비밀번호
+            <input type="password" name="password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <label>
+            비밀번호 확인
+            <input type="password" name="confirm_password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <button type="submit" class="primary">회원가입</button>
+        </form>
+        <p id="register-feedback" class="auth-feedback" role="alert"></p>
+        <p class="auth-hint">
+          이미 계정이 있으신가요?
+          <a href="/static/login.html" class="auth-link">로그인</a>
+        </p>
+      </section>
+
+      <section class="auth-card info-card">
+        <h2>회원가입 안내</h2>
+        <ul class="auth-list">
+          <li>아이디는 3자 이상 50자 이하의 영문, 숫자 조합을 권장합니다.</li>
+          <li>비밀번호는 6자 이상으로 설정해주세요.</li>
+          <li>입력한 이메일로 비밀번호 재설정 안내를 받을 수 있습니다.</li>
+        </ul>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script src="/static/register.js" defer></script>
+  </body>
+</html>

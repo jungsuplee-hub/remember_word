@@ -23,7 +23,7 @@ let historyLoading = false;
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
-const passwordLink = document.querySelector('#password-link');
+const accountLink = document.querySelector('#account-link');
 
 function updateUserMenu(user) {
   if (!user) return;
@@ -33,8 +33,8 @@ function updateUserMenu(user) {
   if (adminLink) {
     adminLink.hidden = !user.is_admin;
   }
-  if (passwordLink) {
-    passwordLink.hidden = false;
+  if (accountLink) {
+    accountLink.hidden = false;
   }
 }
 
