@@ -37,10 +37,22 @@ const wordMoveCancelButton = document.querySelector('#word-move-cancel');
 const wordMoveSubmitButton = document.querySelector('#word-move-submit');
 const wordMoveWordLabel = document.querySelector('#word-move-word');
 const wordMoveBackdrop = wordMoveDialog ? wordMoveDialog.querySelector('.modal-backdrop') : null;
+const groupMoveDialog = document.querySelector('#group-move-dialog');
+const groupMoveForm = document.querySelector('#group-move-form');
+const groupMoveFolderSelect = document.querySelector('#group-move-folder');
+const groupMoveCancelButton = document.querySelector('#group-move-cancel');
+const groupMoveSubmitButton = document.querySelector('#group-move-submit');
+const groupMoveGroupLabel = document.querySelector('#group-move-group');
+const groupMoveCurrentFolderLabel = document.querySelector('#group-move-current-folder');
+const groupMoveBackdrop = groupMoveDialog
+  ? groupMoveDialog.querySelector('.modal-backdrop')
+  : null;
 let wordEditTargetWordId = null;
 let wordMoveTargetWordId = null;
 let wordMoveOriginalGroupId = null;
 let wordMoveGroupsCache = [];
+let groupMoveTargetGroupId = null;
+let groupMoveOriginalFolderId = null;
 
 function updateUserMenu(user) {
   if (!user) return;
@@ -114,6 +126,15 @@ function updateWordMoveSubmitState() {
       && wordMoveGroupSelect.value
   );
   wordMoveSubmitButton.disabled = !hasSelection;
+}
+
+function updateGroupMoveSubmitState() {
+  if (!groupMoveSubmitButton || !groupMoveFolderSelect) return;
+  const folderValue = groupMoveFolderSelect.value;
+  const folderId = Number(folderValue);
+  const isValid =
+    Boolean(folderValue) && Number.isInteger(folderId) && folderId !== groupMoveOriginalFolderId;
+  groupMoveSubmitButton.disabled = !isValid;
 }
 
 function populateWordMoveFolderOptions(selectedFolderId) {
@@ -210,6 +231,28 @@ function populateWordMoveGroupOptions(folderId, selectedGroupId) {
   updateWordMoveSubmitState();
 }
 
+function populateGroupMoveFolderOptions(folders) {
+  if (!groupMoveFolderSelect) return;
+  groupMoveFolderSelect.innerHTML = '';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '이동할 폴더를 선택하세요';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  groupMoveFolderSelect.appendChild(placeholder);
+
+  folders.forEach((folder) => {
+    const option = document.createElement('option');
+    option.value = String(folder.id);
+    option.textContent = folder.name;
+    groupMoveFolderSelect.appendChild(option);
+  });
+
+  groupMoveFolderSelect.disabled = folders.length === 0;
+  updateGroupMoveSubmitState();
+}
+
 function closeWordMoveDialog() {
   if (!wordMoveDialog) return;
   wordMoveDialog.classList.add('hidden');
@@ -233,6 +276,29 @@ function closeWordMoveDialog() {
     wordMoveWordLabel.textContent = '';
   }
   updateWordMoveSubmitState();
+}
+
+function closeGroupMoveDialog() {
+  if (!groupMoveDialog) return;
+  groupMoveDialog.classList.add('hidden');
+  groupMoveDialog.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  groupMoveTargetGroupId = null;
+  groupMoveOriginalFolderId = null;
+  if (groupMoveForm) {
+    groupMoveForm.reset();
+  }
+  if (groupMoveFolderSelect) {
+    groupMoveFolderSelect.innerHTML = '';
+    groupMoveFolderSelect.disabled = true;
+  }
+  if (groupMoveGroupLabel) {
+    groupMoveGroupLabel.textContent = '';
+  }
+  if (groupMoveCurrentFolderLabel) {
+    groupMoveCurrentFolderLabel.textContent = '';
+  }
+  updateGroupMoveSubmitState();
 }
 
 async function api(path, options = {}) {
@@ -621,39 +687,50 @@ async function openGroupEditPrompt(groupId) {
 }
 
 async function openGroupMovePrompt(groupId) {
+  if (!groupMoveDialog || !groupMoveForm || !groupMoveFolderSelect) {
+    return;
+  }
+
   const group = state.groups.find((g) => g.id === groupId);
   if (!group) return;
-  if (state.folders.length === 0) {
+
+  if (!state.folders || state.folders.length === 0) {
     showToast('먼저 폴더를 만들어주세요.', 'error');
     return;
   }
-  const options = state.folders
-    .map((folder) => `${folder.id}: ${folder.name}`)
-    .join('\n');
-  const input = prompt(`이동할 폴더 ID를 선택하세요:\n${options}`, String(group.folder_id));
-  if (input === null) return;
-  const targetId = Number(input);
-  if (!Number.isInteger(targetId) || !state.folders.some((f) => f.id === targetId)) {
-    showToast('유효한 폴더 ID를 입력하세요.', 'error');
+
+  const availableFolders = state.folders.filter((folder) => folder.id !== group.folder_id);
+  if (availableFolders.length === 0) {
+    showToast('이동할 다른 폴더가 없습니다.', 'error');
     return;
   }
-  if (targetId === group.folder_id) return;
-  try {
-    await api(`/groups/${groupId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ folder_id: targetId }),
-    });
-    showToast('그룹을 다른 폴더로 이동했습니다.');
-    if (state.activeFolderId === targetId) {
-      await fetchGroups();
-    } else if (state.activeFolderId === group.folder_id) {
-      await fetchGroups();
-    } else {
-      await fetchFolders();
-    }
-  } catch (err) {
-    showToast(err.message, 'error');
+
+  groupMoveTargetGroupId = groupId;
+  groupMoveOriginalFolderId = group.folder_id;
+  if (groupMoveGroupLabel) {
+    groupMoveGroupLabel.textContent = `선택한 그룹: ${group.name}`;
   }
+  if (groupMoveCurrentFolderLabel) {
+    groupMoveCurrentFolderLabel.textContent = `현재 폴더: ${resolveFolderName(group.folder_id)}`;
+  }
+
+  groupMoveDialog.classList.remove('hidden');
+  groupMoveDialog.removeAttribute('aria-hidden');
+  document.body.classList.add('modal-open');
+
+  groupMoveFolderSelect.disabled = true;
+  groupMoveFolderSelect.innerHTML = '';
+  updateGroupMoveSubmitState();
+
+  populateGroupMoveFolderOptions(availableFolders);
+  groupMoveFolderSelect.disabled = false;
+  updateGroupMoveSubmitState();
+
+  setTimeout(() => {
+    if (groupMoveFolderSelect) {
+      groupMoveFolderSelect.focus();
+    }
+  }, 0);
 }
 
 async function deleteGroup(groupId) {
@@ -911,6 +988,69 @@ if (wordMoveDialog) {
     if (event.key === 'Escape' && !wordMoveDialog.classList.contains('hidden')) {
       event.preventDefault();
       closeWordMoveDialog();
+    }
+  });
+}
+
+if (groupMoveCancelButton) {
+  groupMoveCancelButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeGroupMoveDialog();
+  });
+}
+
+if (groupMoveBackdrop) {
+  groupMoveBackdrop.addEventListener('click', () => {
+    closeGroupMoveDialog();
+  });
+}
+
+if (groupMoveFolderSelect) {
+  groupMoveFolderSelect.addEventListener('change', updateGroupMoveSubmitState);
+}
+
+if (groupMoveForm) {
+  groupMoveForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!groupMoveTargetGroupId || !groupMoveFolderSelect || groupMoveFolderSelect.disabled) {
+      return;
+    }
+    const targetValue = groupMoveFolderSelect.value;
+    const targetId = Number(targetValue);
+    if (!targetValue || !Number.isInteger(targetId)) {
+      showToast('이동할 폴더를 선택하세요.', 'error');
+      return;
+    }
+    if (targetId === groupMoveOriginalFolderId) {
+      closeGroupMoveDialog();
+      return;
+    }
+
+    const originalFolderId = groupMoveOriginalFolderId;
+
+    try {
+      await api(`/groups/${groupMoveTargetGroupId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ folder_id: targetId }),
+      });
+      showToast('그룹을 다른 폴더로 이동했습니다.');
+      closeGroupMoveDialog();
+      if (state.activeFolderId === targetId || state.activeFolderId === originalFolderId) {
+        await fetchGroups();
+      } else {
+        await fetchFolders();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
+
+if (groupMoveDialog) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !groupMoveDialog.classList.contains('hidden')) {
+      event.preventDefault();
+      closeGroupMoveDialog();
     }
   });
 }

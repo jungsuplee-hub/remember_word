@@ -228,6 +228,30 @@
       </form>
     </div>
 
+    <div
+      id="group-move-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="group-move-title"
+    >
+      <div class="modal-backdrop" data-dismiss="group-move"></div>
+      <form id="group-move-form" class="modal-content" role="document">
+        <h2 id="group-move-title">그룹 이동</h2>
+        <p id="group-move-group" class="modal-caption"></p>
+        <p id="group-move-current-folder" class="form-description"></p>
+        <p class="form-description">이동할 폴더를 선택하세요.</p>
+        <label class="modal-field">
+          폴더
+          <select id="group-move-folder" required disabled></select>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="group-move-cancel">취소</button>
+          <button type="submit" id="group-move-submit" disabled>이동</button>
+        </div>
+      </form>
+    </div>
+
     <div id="toast" role="status" aria-live="polite"></div>
 
     <div id="guide-modal" class="guide-modal" hidden>
