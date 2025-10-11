@@ -180,16 +180,39 @@ function openHistoryModal(plan, planKey) {
   }
 }
 
-function openHistoryModalByKey(planKey) {
+async function openHistoryModalByKey(planKey, fallbackPlan = null) {
   if (!planKey) {
     showToast('시험 이력을 불러올 수 없습니다.', 'error');
     return;
   }
-  const plan = state.planMap.get(planKey);
+
+  let plan = state.planMap.get(planKey);
+  if (!plan) {
+    try {
+      await fetchTodayPlans();
+    } catch (error) {
+      console.error(error);
+    }
+    plan = state.planMap.get(planKey);
+  }
+
+  if (!plan && fallbackPlan) {
+    plan = {
+      study_date: fallbackPlan.studyDate || state.todayIso,
+      group_id: fallbackPlan.groupId ? Number(fallbackPlan.groupId) : undefined,
+      group_name: fallbackPlan.groupName || '',
+      folder_id: fallbackPlan.folderId ? Number(fallbackPlan.folderId) : undefined,
+      folder_name: fallbackPlan.folderName || '',
+      exam_sessions: [],
+      is_completed: false,
+    };
+  }
+
   if (!plan) {
     showToast('시험 이력 정보를 찾을 수 없습니다.', 'error');
     return;
   }
+
   openHistoryModal(plan, planKey);
 }
 
@@ -318,6 +341,11 @@ function createPlanListItem(plan) {
   if (planKey) {
     historyBtn.dataset.planKey = planKey;
   }
+  historyBtn.dataset.groupName = plan?.group_name || '';
+  historyBtn.dataset.folderName = plan?.folder_name || '';
+  historyBtn.dataset.studyDate = plan?.study_date || state.todayIso;
+  historyBtn.dataset.groupId = plan?.group_id ? String(plan.group_id) : '';
+  historyBtn.dataset.folderId = plan?.folder_id ? String(plan.folder_id) : '';
 
   actions.appendChild(memorizeBtn);
   actions.appendChild(examBtn);
@@ -396,32 +424,48 @@ async function fetchTodayPlans() {
       }
     }
     renderPlans();
+    return state.plans;
   } catch (error) {
     console.error(error);
     showToast(error.message, 'error');
+    return [];
   }
 }
 
 function handlePlanAction(event) {
   const button = event.target.closest('button[data-action]');
   if (!button) return;
+  const action = button.dataset.action;
+  if (!action) return;
   const folderId = button.dataset.folderId;
   const groupId = button.dataset.groupId;
-  if (!folderId || !groupId) return;
+  if (action === 'memorize' || action === 'exam') {
+    if (!folderId || !groupId) return;
+  }
 
-  if (button.dataset.action === 'memorize') {
+  if (action === 'memorize') {
     const url = new URL('/static/memorize.html', window.location.origin);
     url.searchParams.set('folder_id', folderId);
     url.searchParams.set('group_id', groupId);
     window.location.href = url.toString();
-  } else if (button.dataset.action === 'exam') {
+  } else if (action === 'exam') {
     const url = new URL('/static/exam.html', window.location.origin);
     url.searchParams.set('folder_id', folderId);
     url.searchParams.set('group_ids', groupId);
     window.location.href = url.toString();
-  } else if (button.dataset.action === 'history') {
+  } else if (action === 'history') {
     const planKey = button.dataset.planKey || getPlanKey({ study_date: state.todayIso, group_id: Number(groupId) });
-    openHistoryModalByKey(planKey);
+    const fallbackPlan = {
+      groupId,
+      folderId,
+      folderName: button.dataset.folderName,
+      groupName: button.dataset.groupName,
+      studyDate: button.dataset.studyDate,
+    };
+    openHistoryModalByKey(planKey, fallbackPlan).catch((error) => {
+      console.error(error);
+      showToast('시험 이력을 여는 중 오류가 발생했습니다.', 'error');
+    });
   }
 }
 
@@ -450,7 +494,11 @@ function scheduleMidnightRefresh() {
     state.today = new Date();
     state.timezoneOffset = state.today.getTimezoneOffset();
     state.todayIso = formatISODate(state.today);
-    await fetchTodayPlans();
+    try {
+      await fetchTodayPlans();
+    } catch (error) {
+      console.error(error);
+    }
     scheduleMidnightRefresh();
   }, timeout);
 }
