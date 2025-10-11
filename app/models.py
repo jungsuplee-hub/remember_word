@@ -5,6 +5,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
+    Date,
     func,
     UniqueConstraint,
     Boolean,
@@ -70,6 +71,7 @@ class Profile(Base):
     sessions = relationship("QuizSession", back_populates="profile", cascade="all,delete")
     folders = relationship("Folder", back_populates="profile", cascade="all,delete")
     groups = relationship("Group", back_populates="profile", cascade="all,delete")
+    study_plans = relationship("StudyPlan", back_populates="profile", cascade="all,delete")
     social_accounts = relationship(
         "SocialAccount",
         back_populates="profile",
@@ -132,4 +134,27 @@ class QuizQuestion(Base):
     created_at = Column(DateTime, server_default=func.now())
     session = relationship("QuizSession", back_populates="questions")
     word = relationship("Word")
+
+
+class StudyPlan(Base):
+    __tablename__ = "study_plans"
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    study_date = Column(Date, nullable=False)
+    folder_id = Column(Integer, ForeignKey("folders.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    profile = relationship("Profile", back_populates="study_plans")
+    folder = relationship("Folder")
+    group = relationship("Group")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "profile_id",
+            "study_date",
+            "group_id",
+            name="uq_study_plan_profile_date_group",
+        ),
+    )
 
