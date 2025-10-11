@@ -2,6 +2,8 @@ const state = {
   folders: [],
   groups: [],
   words: [],
+  wordOrder: [],
+  isShuffled: false,
   activeFolderId: null,
   activeGroupId: null,
   hideTerm: false,
@@ -21,6 +23,7 @@ const tableBody = document.querySelector('#memorize-word-table');
 const tableContainer = document.querySelector('#memorize-table-container');
 const toggleTermBtn = document.querySelector('#toggle-term');
 const toggleMeaningBtn = document.querySelector('#toggle-meaning');
+const shuffleButton = document.querySelector('#shuffle-words');
 const rangeForm = document.querySelector('#memorize-range-form');
 const rangeStartInput = document.querySelector('#memorize-range-start');
 const rangeEndInput = document.querySelector('#memorize-range-end');
@@ -494,8 +497,59 @@ function createCell({ text, hiddenLabel, type, reading }) {
   return cell;
 }
 
+function getOrderedWords() {
+  if (!Array.isArray(state.wordOrder) || state.wordOrder.length === 0) {
+    return state.words.slice();
+  }
+
+  const wordMap = new Map(state.words.map((word) => [word.id, word]));
+  const ordered = [];
+  const seen = new Set();
+
+  state.wordOrder.forEach((id) => {
+    const word = wordMap.get(id);
+    if (!word || seen.has(id)) return;
+    ordered.push(word);
+    seen.add(id);
+  });
+
+  if (ordered.length !== state.words.length) {
+    state.words.forEach((word) => {
+      if (!seen.has(word.id)) {
+        ordered.push(word);
+        seen.add(word.id);
+      }
+    });
+    state.wordOrder = ordered.map((word) => word.id);
+  }
+
+  return ordered;
+}
+
+function updateShuffleButton() {
+  if (!shuffleButton) return;
+  const totalWords = state.words.length;
+  const hasWords = Boolean(state.activeGroupId) && totalWords > 1;
+  shuffleButton.disabled = !hasWords;
+  shuffleButton.textContent = state.isShuffled ? '다시 섞기' : '단어 섞기';
+  if (!hasWords) {
+    if (!state.activeGroupId) {
+      shuffleButton.title = '먼저 폴더와 그룹을 선택하세요.';
+    } else if (totalWords === 0) {
+      shuffleButton.title = '섞을 단어가 없습니다.';
+    } else {
+      shuffleButton.title = '섞으려면 단어가 두 개 이상 필요합니다.';
+    }
+  } else {
+    shuffleButton.title = state.isShuffled
+      ? '현재 목록을 다시 섞습니다.'
+      : '단어 목록을 무작위로 섞습니다.';
+  }
+}
+
 function renderWords() {
   tableBody.innerHTML = '';
+  updateShuffleButton();
 
   if (!state.activeGroupId) {
     const row = document.createElement('tr');
@@ -527,9 +581,10 @@ function renderWords() {
   }
 
   ensureRangeWithinBounds();
-  const total = state.words.length;
+  const orderedWords = getOrderedWords();
+  const total = orderedWords.length;
   const { startIndex, endIndex, visibleCount } = computeVisibleRange(total);
-  const visibleWords = state.words.slice(startIndex, endIndex);
+  const visibleWords = orderedWords.slice(startIndex, endIndex);
 
   if (!visibleWords.length) {
     const row = document.createElement('tr');
@@ -580,7 +635,33 @@ function renderWords() {
   updateAllAudioButtonsAria();
   updateSubtitle();
   updateToggleButtons(visibleCount);
+  updateShuffleButton();
   updateRangeControls();
+}
+
+function shuffleWordOrder() {
+  if (!state.words.length) {
+    return;
+  }
+
+  const ordered = getOrderedWords();
+  if (ordered.length <= 1) {
+    state.wordOrder = ordered.map((word) => word.id);
+    state.isShuffled = false;
+    updateShuffleButton();
+    return;
+  }
+
+  const ids = ordered.map((word) => word.id);
+  for (let i = ids.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+
+  state.wordOrder = ids;
+  state.isShuffled = true;
+  renderWords();
+  showToast('단어 순서를 섞었습니다.');
 }
 
 function updateToggleButtons(visibleCount = state.words.length) {
@@ -622,6 +703,12 @@ function resetPeekStates() {
   }
 }
 
+function clearWordsState() {
+  state.words = [];
+  state.wordOrder = [];
+  state.isShuffled = false;
+}
+
 async function fetchFolders() {
   try {
     state.folders = await api('/folders');
@@ -629,7 +716,7 @@ async function fetchFolders() {
       state.activeFolderId = null;
       state.groups = [];
       state.activeGroupId = null;
-      state.words = [];
+      clearWordsState();
     }
     renderFolders();
     renderGroups();
@@ -647,7 +734,7 @@ async function fetchGroups() {
     if (state.activeGroupId) {
       await fetchWords();
     } else {
-      state.words = [];
+      clearWordsState();
       renderWords();
     }
   } catch (error) {
@@ -661,6 +748,8 @@ async function fetchWords() {
     state.peekTerm.clear();
     state.peekMeaning.clear();
     state.words = await api(`/words?group_id=${state.activeGroupId}`);
+    state.wordOrder = state.words.map((word) => word.id);
+    state.isShuffled = false;
     ensureRangeWithinBounds();
     updateRangeInputs();
     renderWords();
@@ -674,7 +763,7 @@ folderSelect.addEventListener('change', () => {
   state.activeFolderId = Number.isFinite(value) && value > 0 ? value : null;
   state.activeGroupId = null;
   state.groups = [];
-  state.words = [];
+  clearWordsState();
   state.hideTerm = false;
   state.hideMeaning = false;
   resetRangeState();
@@ -689,7 +778,7 @@ folderSelect.addEventListener('change', () => {
 groupSelect.addEventListener('change', () => {
   const value = Number(groupSelect.value);
   state.activeGroupId = Number.isFinite(value) && value > 0 ? value : null;
-  state.words = [];
+  clearWordsState();
   state.hideTerm = false;
   state.hideMeaning = false;
   resetRangeState();
@@ -844,6 +933,13 @@ toggleMeaningBtn.addEventListener('click', () => {
   }
   renderWords();
 });
+
+if (shuffleButton) {
+  shuffleButton.addEventListener('click', () => {
+    if (shuffleButton.disabled) return;
+    shuffleWordOrder();
+  });
+}
 
 if (rangeForm) {
   rangeForm.addEventListener('submit', (event) => {
