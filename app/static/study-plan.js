@@ -226,6 +226,18 @@ function setPlansForDate(iso, plans) {
   state.plansByDate.set(iso, sortPlans(plans));
 }
 
+function getDayCompletionStatus(plans) {
+  if (!Array.isArray(plans) || !plans.length) {
+    return null;
+  }
+  const total = plans.length;
+  const completed = plans.reduce((count, plan) => (plan?.is_completed ? count + 1 : count), 0);
+  if (completed === total) {
+    return 'completed';
+  }
+  return 'pending';
+}
+
 function createCalendarChip(plan, dateIso, totalCount, plans) {
   const chip = document.createElement('div');
   chip.className = 'calendar-plan-chip';
@@ -296,6 +308,12 @@ function renderCalendar() {
     button.appendChild(dateLabel);
 
     const plans = getPlansForDate(iso);
+    const dayStatus = getDayCompletionStatus(plans);
+    if (dayStatus === 'completed') {
+      button.classList.add('is-completed');
+    } else if (dayStatus === 'pending') {
+      button.classList.add('is-pending');
+    }
     if (plans.length) {
       const container = document.createElement('div');
       container.className = 'calendar-plans';

@@ -60,6 +60,11 @@ def list_study_plans(
 
     group_ids = {plan.group_id for plan in plans}
     study_dates = [plan.study_date for plan in plans if plan.study_date is not None]
+    plan_groups_by_date: dict[date, set[int]] = {}
+    for plan in plans:
+        if plan.study_date is None:
+            continue
+        plan_groups_by_date.setdefault(plan.study_date, set()).add(plan.group_id)
 
     if not group_ids or not study_dates:
         return serialized
@@ -129,6 +134,11 @@ def list_study_plans(
                 target_groups = {session.group_id}
             else:
                 continue
+
+        scheduled_for_date = plan_groups_by_date.get(session_date)
+        if entry["passed"] and scheduled_for_date and target_groups:
+            if len(target_groups) > 1 and scheduled_for_date.issuperset(target_groups):
+                target_groups = set(scheduled_for_date)
 
         for group_id in target_groups:
             if group_id not in group_ids:
