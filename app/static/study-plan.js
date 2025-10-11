@@ -276,6 +276,11 @@ function renderCalendar() {
     button.setAttribute('aria-haspopup', 'dialog');
     button.setAttribute('aria-controls', 'plan-modal');
 
+    const weekday = current.getDay();
+    if (weekday === 0 || weekday === 6) {
+      button.classList.add('is-weekend');
+    }
+
     if (!isSameMonth(current, state.currentMonth)) {
       button.classList.add('is-outside');
     }

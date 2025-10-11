@@ -2657,6 +2657,11 @@ body.modal-open {
   text-align: left;
   min-height: clamp(95px, 18vw, 160px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  color: #1f2937;
+}
+
+.calendar-day.is-weekend {
+  background: rgba(248, 113, 113, 0.12);
 }
 
 .calendar-day:hover {
