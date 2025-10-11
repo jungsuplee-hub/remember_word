@@ -1,4 +1,5 @@
 const today = new Date();
+const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
 const state = {
   currentMonth: new Date(today.getFullYear(), today.getMonth(), 1),
@@ -136,6 +137,14 @@ function addDays(date, amount) {
 
 function isSameMonth(dateA, dateB) {
   return dateA.getFullYear() === dateB.getFullYear() && dateA.getMonth() === dateB.getMonth();
+}
+
+function isOnOrBeforeToday(date) {
+  if (!(date instanceof Date)) {
+    return false;
+  }
+  const comparable = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return comparable.getTime() <= todayStart.getTime();
 }
 
 function showToast(message, type = 'info') {
@@ -311,7 +320,7 @@ function renderCalendar() {
     const dayStatus = getDayCompletionStatus(plans);
     if (dayStatus === 'completed') {
       button.classList.add('is-completed');
-    } else if (dayStatus === 'pending') {
+    } else if (dayStatus === 'pending' && isOnOrBeforeToday(current)) {
       button.classList.add('is-pending');
     }
     if (plans.length) {
