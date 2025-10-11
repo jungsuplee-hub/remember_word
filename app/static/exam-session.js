@@ -203,7 +203,11 @@ function updateSubtitle() {
       subtitle.textContent = '시험을 준비 중입니다...';
       return;
     }
-    subtitle.textContent = `진행 ${progress.answered}/${progress.total} · 정답 ${progress.correct}`;
+    const incorrect = Math.max(0, progress.answered - progress.correct);
+    const accuracy = progress.answered
+      ? `${formatScore(computeScore(progress.correct, progress.answered))}%`
+      : '-';
+    subtitle.textContent = `진행 ${progress.answered}/${progress.total} · 정답 ${progress.correct} · 오답 ${incorrect} · 정답률 ${accuracy}`;
     return;
   }
   if (state.quiz.completed && state.quiz.lastResult) {
@@ -279,7 +283,9 @@ function updateProgressUI() {
     return;
   }
   const { answered, total, correct, remaining } = progress;
-  progressEl.textContent = `진행 ${answered}/${total} · 정답 ${correct} · 남은 ${remaining}`;
+  const incorrect = Math.max(0, answered - correct);
+  const accuracy = answered ? `${formatScore(computeScore(correct, answered))}%` : '-';
+  progressEl.textContent = `진행 ${answered}/${total} · 정답 ${correct} · 오답 ${incorrect} · 남은 ${remaining} · 정답률 ${accuracy}`;
   updateSubtitle();
 }
 
