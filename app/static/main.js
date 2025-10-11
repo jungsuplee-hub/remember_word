@@ -21,6 +21,21 @@ const accountLink = document.querySelector('#account-link');
 const folderCount = document.querySelector('#folder-count');
 const groupCount = document.querySelector('#group-count');
 const wordCount = document.querySelector('#word-count');
+const folderEditDialog = document.querySelector('#folder-edit-dialog');
+const folderEditForm = document.querySelector('#folder-edit-form');
+const folderEditNameInput = document.querySelector('#folder-edit-name');
+const folderEditCancelButton = document.querySelector('#folder-edit-cancel');
+const folderEditSubmitButton = document.querySelector('#folder-edit-submit');
+const folderEditFolderLabel = document.querySelector('#folder-edit-folder');
+const folderEditBackdrop = folderEditDialog ? folderEditDialog.querySelector('.modal-backdrop') : null;
+const groupEditDialog = document.querySelector('#group-edit-dialog');
+const groupEditForm = document.querySelector('#group-edit-form');
+const groupEditNameInput = document.querySelector('#group-edit-name');
+const groupEditCancelButton = document.querySelector('#group-edit-cancel');
+const groupEditSubmitButton = document.querySelector('#group-edit-submit');
+const groupEditGroupLabel = document.querySelector('#group-edit-group');
+const groupEditFolderLabel = document.querySelector('#group-edit-folder');
+const groupEditBackdrop = groupEditDialog ? groupEditDialog.querySelector('.modal-backdrop') : null;
 const wordEditDialog = document.querySelector('#word-edit-dialog');
 const wordEditForm = document.querySelector('#word-edit-form');
 const wordEditTermInput = document.querySelector('#word-edit-term');
@@ -47,6 +62,8 @@ const groupMoveCurrentFolderLabel = document.querySelector('#group-move-current-
 const groupMoveBackdrop = groupMoveDialog
   ? groupMoveDialog.querySelector('.modal-backdrop')
   : null;
+let folderEditTargetFolderId = null;
+let groupEditTargetGroupId = null;
 let wordEditTargetWordId = null;
 let wordMoveTargetWordId = null;
 let wordMoveOriginalGroupId = null;
@@ -94,6 +111,18 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
+function updateFolderEditSubmitState() {
+  if (!folderEditSubmitButton || !folderEditNameInput) return;
+  const hasName = Boolean(folderEditNameInput.value.trim());
+  folderEditSubmitButton.disabled = !hasName;
+}
+
+function updateGroupEditSubmitState() {
+  if (!groupEditSubmitButton || !groupEditNameInput) return;
+  const hasName = Boolean(groupEditNameInput.value.trim());
+  groupEditSubmitButton.disabled = !hasName;
+}
+
 function updateWordEditSubmitState() {
   if (!wordEditSubmitButton || !wordEditTermInput || !wordEditMeaningInput) return;
   const hasTerm = Boolean(wordEditTermInput.value.trim());
@@ -116,6 +145,95 @@ function updateCounts() {
 function resolveFolderName(folderId) {
   const folder = state.folders.find((f) => f.id === folderId);
   return folder ? folder.name : `폴더 ${folderId}`;
+}
+
+function closeFolderEditDialog() {
+  if (!folderEditDialog) return;
+  folderEditDialog.classList.add('hidden');
+  folderEditDialog.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  folderEditTargetFolderId = null;
+  if (folderEditForm) {
+    folderEditForm.reset();
+  }
+  if (folderEditFolderLabel) {
+    folderEditFolderLabel.textContent = '';
+  }
+  updateFolderEditSubmitState();
+}
+
+function openFolderEditDialog(folderId) {
+  if (!folderEditDialog || !folderEditForm || !folderEditNameInput) {
+    return;
+  }
+  const folder = state.folders.find((f) => f.id === folderId);
+  if (!folder) return;
+
+  folderEditTargetFolderId = folderId;
+  folderEditDialog.classList.remove('hidden');
+  folderEditDialog.removeAttribute('aria-hidden');
+  document.body.classList.add('modal-open');
+
+  if (folderEditFolderLabel) {
+    folderEditFolderLabel.textContent = `선택한 폴더: ${folder.name}`;
+  }
+  folderEditNameInput.value = folder.name ?? '';
+  updateFolderEditSubmitState();
+
+  setTimeout(() => {
+    if (folderEditNameInput) {
+      folderEditNameInput.focus();
+      folderEditNameInput.select();
+    }
+  }, 0);
+}
+
+function closeGroupEditDialog() {
+  if (!groupEditDialog) return;
+  groupEditDialog.classList.add('hidden');
+  groupEditDialog.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  groupEditTargetGroupId = null;
+  if (groupEditForm) {
+    groupEditForm.reset();
+  }
+  if (groupEditGroupLabel) {
+    groupEditGroupLabel.textContent = '';
+  }
+  if (groupEditFolderLabel) {
+    groupEditFolderLabel.textContent = '';
+  }
+  updateGroupEditSubmitState();
+}
+
+function openGroupEditDialog(groupId) {
+  if (!groupEditDialog || !groupEditForm || !groupEditNameInput) {
+    return;
+  }
+
+  const group = state.groups.find((g) => g.id === groupId);
+  if (!group) return;
+
+  groupEditTargetGroupId = groupId;
+  groupEditDialog.classList.remove('hidden');
+  groupEditDialog.removeAttribute('aria-hidden');
+  document.body.classList.add('modal-open');
+
+  if (groupEditGroupLabel) {
+    groupEditGroupLabel.textContent = `선택한 그룹: ${group.name}`;
+  }
+  if (groupEditFolderLabel) {
+    groupEditFolderLabel.textContent = `소속 폴더: ${resolveFolderName(group.folder_id)}`;
+  }
+  groupEditNameInput.value = group.name ?? '';
+  updateGroupEditSubmitState();
+
+  setTimeout(() => {
+    if (groupEditNameInput) {
+      groupEditNameInput.focus();
+      groupEditNameInput.select();
+    }
+  }, 0);
 }
 
 function updateWordMoveSubmitState() {
@@ -634,25 +752,6 @@ function handleWordTableClick(event) {
   }
 }
 
-async function openFolderEditPrompt(folderId) {
-  const folder = state.folders.find((f) => f.id === folderId);
-  if (!folder) return;
-  const nextName = prompt('새 폴더 이름을 입력하세요.', folder.name);
-  if (nextName === null) return;
-  const trimmed = nextName.trim();
-  if (!trimmed || trimmed === folder.name) return;
-  try {
-    await api(`/folders/${folderId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ name: trimmed }),
-    });
-    showToast('폴더 이름을 변경했습니다.');
-    await fetchFolders();
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
 async function deleteFolder(folderId) {
   const folder = state.folders.find((f) => f.id === folderId);
   if (!folder) return;
@@ -662,25 +761,6 @@ async function deleteFolder(folderId) {
     await api(`/folders/${folderId}`, { method: 'DELETE' });
     showToast('폴더를 삭제했습니다.');
     await fetchFolders();
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
-async function openGroupEditPrompt(groupId) {
-  const group = state.groups.find((g) => g.id === groupId);
-  if (!group) return;
-  const nextName = prompt('새 그룹 이름을 입력하세요.', group.name);
-  if (nextName === null) return;
-  const trimmed = nextName.trim();
-  if (!trimmed || trimmed === group.name) return;
-  try {
-    await api(`/groups/${groupId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ name: trimmed }),
-    });
-    showToast('그룹 이름을 변경했습니다.');
-    await fetchGroups();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -852,6 +932,144 @@ async function openWordMovePrompt(wordId) {
       wordMoveFolderSelect.focus();
     }
   }, 0);
+}
+
+if (folderEditNameInput) {
+  folderEditNameInput.addEventListener('input', updateFolderEditSubmitState);
+}
+
+if (folderEditCancelButton) {
+  folderEditCancelButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeFolderEditDialog();
+  });
+}
+
+if (folderEditBackdrop) {
+  folderEditBackdrop.addEventListener('click', () => {
+    closeFolderEditDialog();
+  });
+}
+
+if (folderEditForm) {
+  folderEditForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!folderEditTargetFolderId || !folderEditNameInput) {
+      return;
+    }
+
+    const name = folderEditNameInput.value.trim();
+    if (!name) {
+      showToast('폴더 이름을 입력하세요.', 'error');
+      updateFolderEditSubmitState();
+      return;
+    }
+
+    const folder = state.folders.find((f) => f.id === folderEditTargetFolderId);
+    if (folder && folder.name === name) {
+      closeFolderEditDialog();
+      return;
+    }
+
+    if (folderEditSubmitButton) {
+      folderEditSubmitButton.disabled = true;
+    }
+
+    try {
+      await api(`/folders/${folderEditTargetFolderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      });
+      showToast('폴더 이름을 변경했습니다.');
+      closeFolderEditDialog();
+      await fetchFolders();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      if (folderEditSubmitButton) {
+        folderEditSubmitButton.disabled = false;
+      }
+      updateFolderEditSubmitState();
+    }
+  });
+}
+
+if (folderEditDialog) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !folderEditDialog.classList.contains('hidden')) {
+      event.preventDefault();
+      closeFolderEditDialog();
+    }
+  });
+}
+
+if (groupEditNameInput) {
+  groupEditNameInput.addEventListener('input', updateGroupEditSubmitState);
+}
+
+if (groupEditCancelButton) {
+  groupEditCancelButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeGroupEditDialog();
+  });
+}
+
+if (groupEditBackdrop) {
+  groupEditBackdrop.addEventListener('click', () => {
+    closeGroupEditDialog();
+  });
+}
+
+if (groupEditForm) {
+  groupEditForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!groupEditTargetGroupId || !groupEditNameInput) {
+      return;
+    }
+
+    const name = groupEditNameInput.value.trim();
+    if (!name) {
+      showToast('그룹 이름을 입력하세요.', 'error');
+      updateGroupEditSubmitState();
+      return;
+    }
+
+    const group = state.groups.find((g) => g.id === groupEditTargetGroupId);
+    if (group && group.name === name) {
+      closeGroupEditDialog();
+      return;
+    }
+
+    if (groupEditSubmitButton) {
+      groupEditSubmitButton.disabled = true;
+    }
+
+    try {
+      await api(`/groups/${groupEditTargetGroupId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      });
+      showToast('그룹 이름을 변경했습니다.');
+      closeGroupEditDialog();
+      await fetchGroups();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      if (groupEditSubmitButton) {
+        groupEditSubmitButton.disabled = false;
+      }
+      updateGroupEditSubmitState();
+    }
+  });
+}
+
+if (groupEditDialog) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !groupEditDialog.classList.contains('hidden')) {
+      event.preventDefault();
+      closeGroupEditDialog();
+    }
+  });
 }
 
 if (wordEditTermInput) {
@@ -1081,7 +1299,7 @@ function handleFolderListClick(event) {
   if (editBtn) {
     const li = editBtn.closest('li');
     const folderId = Number(li.dataset.id);
-    openFolderEditPrompt(folderId);
+    openFolderEditDialog(folderId);
   }
 }
 
@@ -1104,7 +1322,7 @@ function handleGroupListClick(event) {
   if (editBtn) {
     const li = editBtn.closest('li');
     const groupId = Number(li.dataset.id);
-    openGroupEditPrompt(groupId);
+    openGroupEditDialog(groupId);
   }
 }
 

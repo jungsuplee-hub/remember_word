@@ -176,6 +176,51 @@
     </main>
 
     <div
+      id="folder-edit-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="folder-edit-title"
+    >
+      <div class="modal-backdrop" data-dismiss="folder-edit"></div>
+      <form id="folder-edit-form" class="modal-content" role="document">
+        <h2 id="folder-edit-title">폴더 수정</h2>
+        <p id="folder-edit-folder" class="modal-caption"></p>
+        <label class="modal-field">
+          폴더 이름
+          <input id="folder-edit-name" name="name" type="text" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="folder-edit-cancel">취소</button>
+          <button type="submit" id="folder-edit-submit" disabled>저장</button>
+        </div>
+      </form>
+    </div>
+
+    <div
+      id="group-edit-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="group-edit-title"
+    >
+      <div class="modal-backdrop" data-dismiss="group-edit"></div>
+      <form id="group-edit-form" class="modal-content" role="document">
+        <h2 id="group-edit-title">그룹 수정</h2>
+        <p id="group-edit-group" class="modal-caption"></p>
+        <p id="group-edit-folder" class="form-description"></p>
+        <label class="modal-field">
+          그룹 이름
+          <input id="group-edit-name" name="name" type="text" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="group-edit-cancel">취소</button>
+          <button type="submit" id="group-edit-submit" disabled>저장</button>
+        </div>
+      </form>
+    </div>
+
+    <div
       id="word-edit-dialog"
       class="modal hidden"
       role="dialog"
