@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
+from datetime import date, datetime, time, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, selectinload
 
@@ -23,6 +25,8 @@ def serialize_plan(plan: models.StudyPlan) -> dict:
         "folder_name": folder_name,
         "group_id": plan.group_id,
         "group_name": group_name,
+        "is_completed": False,
+        "exam_sessions": [],
     }
 
 
@@ -48,7 +52,93 @@ def list_study_plans(
         query = query.filter(models.StudyPlan.study_date <= end)
 
     plans = query.order_by(models.StudyPlan.study_date, models.StudyPlan.id).all()
-    return [serialize_plan(plan) for plan in plans]
+    serialized = [serialize_plan(plan) for plan in plans]
+
+    if not serialized:
+        return serialized
+
+    group_ids = {plan.group_id for plan in plans}
+    study_dates = [plan.study_date for plan in plans if plan.study_date is not None]
+
+    if not group_ids or not study_dates:
+        return serialized
+
+    min_date = min(study_dates)
+    max_date = max(study_dates)
+
+    start_dt = datetime.combine(min_date, time.min)
+    end_dt = datetime.combine(max_date + timedelta(days=1), time.min)
+
+    sessions = (
+        db.query(models.QuizSession)
+        .filter(
+            models.QuizSession.profile_id == current_user.id,
+            models.QuizSession.mode == "exam",
+            models.QuizSession.created_at >= start_dt,
+            models.QuizSession.created_at < end_dt,
+        )
+        .order_by(models.QuizSession.created_at.desc())
+        .all()
+    )
+
+    threshold_percent = current_user.exam_pass_threshold or 90
+    normalized_threshold = max(0, min(100, threshold_percent)) / 100
+
+    session_ids = [session.id for session in sessions]
+
+    group_ids_by_session: dict[int, set[int]] = {}
+    if session_ids:
+        question_rows = (
+            db.query(models.QuizQuestion.session_id, models.Word.group_id)
+            .join(models.Word, models.Word.id == models.QuizQuestion.word_id)
+            .filter(models.QuizQuestion.session_id.in_(session_ids))
+            .all()
+        )
+        for session_id, group_id in question_rows:
+            if group_id is None or group_id not in group_ids:
+                continue
+            targets = group_ids_by_session.setdefault(session_id, set())
+            targets.add(group_id)
+
+    history_map: dict[tuple[int, date], list[dict]] = {}
+    for session in sessions:
+        created_at = session.created_at or datetime.utcnow()
+        session_date = created_at.date()
+        if session_date < min_date or session_date > max_date:
+            continue
+
+        total = session.total_questions or 0
+        correct = session.correct_questions or 0
+        score = (correct / total * 100) if total else 0.0
+        entry = {
+            "session_id": session.id,
+            "created_at": created_at,
+            "total": total,
+            "correct": correct,
+            "score": round(score, 1),
+            "passed": total > 0 and (correct / total) >= normalized_threshold,
+        }
+
+        target_groups = group_ids_by_session.get(session.id)
+        if not target_groups:
+            if session.group_id in group_ids:
+                target_groups = {session.group_id}
+            else:
+                continue
+
+        for group_id in target_groups:
+            if group_id not in group_ids:
+                continue
+            key = (group_id, session_date)
+            history_map.setdefault(key, []).append(entry.copy())
+
+    for plan, payload in zip(plans, serialized):
+        key = (plan.group_id, plan.study_date)
+        sessions_for_plan = history_map.get(key, [])
+        payload["exam_sessions"] = sessions_for_plan
+        payload["is_completed"] = any(item.get("passed") for item in sessions_for_plan)
+
+    return serialized
 
 
 @router.put("/{study_date}", response_model=list[schemas.StudyPlanOut])

@@ -102,6 +102,19 @@ def logout(request: Request) -> dict:
     return {"status": "ok"}
 
 
+@router.patch("/preferences", response_model=schemas.SessionInfo)
+def update_preferences(
+    payload: schemas.AccountPreferencesUpdate,
+    current_user: models.Profile = Depends(require_current_user),
+    db: Session = Depends(get_db),
+) -> schemas.SessionInfo:
+    current_user.exam_pass_threshold = payload.exam_pass_threshold
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 @router.get("/session", response_model=schemas.SessionInfo)
 def session_info(
     current_user: models.Profile = Depends(require_current_user),

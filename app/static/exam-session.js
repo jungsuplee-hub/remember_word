@@ -44,6 +44,18 @@ const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
 const accountLink = document.querySelector('#account-link');
 const sessionManager = window.Session;
+let passRatio = 0.9;
+
+function normalizeThreshold(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 90;
+  return Math.min(100, Math.max(0, numeric));
+}
+
+function updatePassRatioFromUser(user) {
+  const threshold = normalizeThreshold(user?.exam_pass_threshold);
+  passRatio = threshold / 100;
+}
 
 function updateUserMenu(user) {
   if (!user) return;
@@ -72,7 +84,10 @@ function updateUserMenu(user) {
 }
 
 if (sessionManager) {
-  sessionManager.subscribe(updateUserMenu);
+  sessionManager.subscribe((user) => {
+    updatePassRatioFromUser(user);
+    updateUserMenu(user);
+  });
 }
 
 if (logoutButton && sessionManager) {
@@ -127,7 +142,7 @@ function formatScore(score) {
 
 function isPassed(correct, total) {
   if (!total) return false;
-  return correct / total >= 0.9;
+  return correct / total >= passRatio;
 }
 
 function consumePendingExamPayload() {
@@ -554,7 +569,8 @@ function handleGlobalKeydown(event) {
 
 async function init() {
   if (sessionManager) {
-    await sessionManager.ensureAuthenticated();
+    const user = await sessionManager.ensureAuthenticated();
+    updatePassRatioFromUser(user);
   }
   resetQuizState();
   showPlaceholder('시험을 준비 중입니다...');

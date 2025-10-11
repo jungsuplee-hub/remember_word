@@ -4,11 +4,16 @@ const toast = document.querySelector('#toast');
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
 const logoutButton = document.querySelector('#logout-button');
+const accountLink = document.querySelector('#account-link');
 const accountName = document.querySelector('#account-name');
 const accountUsername = document.querySelector('#account-username');
 const accountEmail = document.querySelector('#account-email');
 const accountLastLogin = document.querySelector('#account-last-login');
 const accountLoginCount = document.querySelector('#account-login-count');
+const accountPassThreshold = document.querySelector('#account-pass-threshold');
+const preferencesForm = document.querySelector('#preferences-form');
+const preferencesFeedback = document.querySelector('#preferences-feedback');
+const passThresholdInput = document.querySelector('#exam-pass-threshold');
 const sessionManager = window.Session;
 
 function showToast(message, type = 'info') {
@@ -23,6 +28,30 @@ function setFeedback(message, type = 'info') {
   if (!passwordFeedback) return;
   passwordFeedback.textContent = message;
   passwordFeedback.dataset.type = type;
+}
+
+function setPreferencesFeedback(message, type = 'info') {
+  if (!preferencesFeedback) return;
+  preferencesFeedback.textContent = message;
+  preferencesFeedback.dataset.type = type;
+}
+
+function normalizeThreshold(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 90;
+  return Math.min(100, Math.max(0, Math.round(numeric)));
+}
+
+function formatThreshold(value) {
+  if (!Number.isFinite(value)) return '-';
+  return `${value}%`;
+}
+
+function updatePreferencesForm(user) {
+  if (!passThresholdInput) return;
+  const threshold = normalizeThreshold(user?.exam_pass_threshold);
+  passThresholdInput.value = threshold;
+  setPreferencesFeedback('', 'info');
 }
 
 function formatDateTime(value) {
@@ -44,6 +73,11 @@ function updateAccountSummary(user) {
   if (accountEmail) accountEmail.textContent = user.email || '-';
   if (accountLastLogin) accountLastLogin.textContent = formatDateTime(user.last_login_at);
   if (accountLoginCount) accountLoginCount.textContent = `${user.login_count ?? 0}회`;
+  if (accountPassThreshold) {
+    const threshold = normalizeThreshold(user.exam_pass_threshold);
+    accountPassThreshold.textContent = formatThreshold(threshold);
+  }
+  updatePreferencesForm(user);
 }
 
 function updateUserMenu(user) {
@@ -131,6 +165,56 @@ async function init() {
 
 if (passwordForm) {
   passwordForm.addEventListener('submit', handlePasswordChange);
+}
+
+async function handlePreferencesSubmit(event) {
+  event.preventDefault();
+  if (!passThresholdInput) return;
+
+  const rawValue = passThresholdInput.value;
+  const trimmed = typeof rawValue === 'string' ? rawValue.trim() : '';
+  if (!trimmed) {
+    setPreferencesFeedback('0 이상 100 이하의 숫자를 입력하세요.', 'error');
+    passThresholdInput.focus();
+    return;
+  }
+  const numeric = Number(trimmed);
+  if (!Number.isFinite(numeric)) {
+    setPreferencesFeedback('숫자만 입력할 수 있습니다.', 'error');
+    passThresholdInput.focus();
+    return;
+  }
+  const normalized = normalizeThreshold(numeric);
+  passThresholdInput.value = normalized;
+
+  try {
+    const res = await fetch('/auth/preferences', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exam_pass_threshold: normalized }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const message = data.detail || '설정을 저장할 수 없습니다. 잠시 후 다시 시도하세요.';
+      setPreferencesFeedback(message, 'error');
+      return;
+    }
+    const user = await res.json();
+    setPreferencesFeedback('시험 합격 기준이 저장되었습니다.', 'success');
+    updateAccountSummary(user);
+    if (sessionManager) {
+      sessionManager.user = user;
+      sessionManager.notify();
+    }
+    showToast('시험 합격 기준이 업데이트되었습니다.');
+  } catch (error) {
+    console.error(error);
+    setPreferencesFeedback('설정을 저장하는 동안 오류가 발생했습니다.', 'error');
+  }
+}
+
+if (preferencesForm) {
+  preferencesForm.addEventListener('submit', handlePreferencesSubmit);
 }
 
 init().catch((error) => {

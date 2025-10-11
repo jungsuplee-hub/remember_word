@@ -107,6 +107,29 @@
       </div>
     </div>
 
+    <div id="today-history-modal" class="today-history-modal" hidden>
+      <div class="today-history-backdrop" data-history-close></div>
+      <div
+        class="today-history-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="today-history-title"
+        tabindex="-1"
+      >
+        <div class="today-history-header">
+          <h2 id="today-history-title" class="today-history-title">시험 이력</h2>
+          <button type="button" class="today-history-close" data-history-close aria-label="시험 이력 닫기">✕</button>
+        </div>
+        <div class="today-history-body">
+          <p id="today-history-empty" class="today-history-empty">아직 시험 이력이 없습니다.</p>
+          <ul id="today-history-list" class="today-history-list" hidden></ul>
+        </div>
+        <div class="today-history-footer">
+          <button type="button" class="link-button secondary" data-history-close>닫기</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/auth.js" defer></script>
     <script src="/static/guide.js" defer></script>
     <script src="/static/today.js" defer></script>

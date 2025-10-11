@@ -865,6 +865,174 @@ body.guide-modal-open {
   z-index: 1200;
 }
 
+body.today-history-modal-open {
+  overflow: hidden;
+}
+
+.today-history-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.today-history-modal[hidden] {
+  display: none;
+}
+
+.today-history-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.today-history-dialog {
+  position: relative;
+  width: min(480px, 92%);
+  max-height: min(80vh, 560px);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-radius: 22px;
+  padding: 1.75rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.32);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.today-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.today-history-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.today-history-close {
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 1.35rem;
+  line-height: 1;
+  border-radius: 999px;
+  padding: 0.25rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.today-history-close:hover,
+.today-history-close:focus-visible {
+  background: rgba(148, 163, 184, 0.24);
+  color: #0f172a;
+  outline: none;
+}
+
+.today-history-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 0.25rem;
+}
+
+.today-history-empty {
+  margin: 1.5rem 0;
+  text-align: center;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.today-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.today-history-item {
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.today-history-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.today-history-date {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.today-history-badge {
+  font-size: 0.8rem;
+}
+
+.today-history-item-bottom {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.today-history-score {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.today-history-detail {
+  font-size: 0.92rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.today-history-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  .today-history-dialog {
+    width: min(96%, 420px);
+    padding: 1.35rem;
+    max-height: min(84vh, 520px);
+  }
+
+  .today-history-title {
+    font-size: 1.1rem;
+  }
+
+  .today-history-item {
+    padding: 0.8rem 0.85rem;
+  }
+
+  .today-history-score {
+    font-size: 0.98rem;
+  }
+}
+
 .guide-modal[hidden] {
   display: none;
 }
@@ -2576,6 +2744,46 @@ body.modal-open {
 
 .today-plan-actions button {
   min-width: 112px;
+}
+
+.today-plan-item-completed {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(236, 253, 245, 0.9);
+}
+
+.today-plan-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #047857;
+  background: rgba(52, 211, 153, 0.25);
+  border-radius: 999px;
+}
+
+.today-plan-history-button {
+  min-width: auto;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.today-plan-history-button:hover,
+.today-plan-history-button:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.25);
+  color: #0f172a;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.28);
 }
 
 .calendar-panel {

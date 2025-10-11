@@ -68,6 +68,9 @@ class Profile(Base):
     password_reset_token = Column(String, nullable=True)
     password_reset_expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+    exam_pass_threshold = Column(
+        Integer, nullable=False, default=90, server_default="90"
+    )
     sessions = relationship("QuizSession", back_populates="profile", cascade="all,delete")
     folders = relationship("Folder", back_populates="profile", cascade="all,delete")
     groups = relationship("Group", back_populates="profile", cascade="all,delete")

@@ -83,6 +83,10 @@ def ensure_schema() -> None:
             "password_reset_expires_at",
             "ALTER TABLE profiles ADD COLUMN password_reset_expires_at TIMESTAMP",
         )
+        add_profile_column(
+            "exam_pass_threshold",
+            "ALTER TABLE profiles ADD COLUMN exam_pass_threshold INTEGER NOT NULL DEFAULT 90",
+        )
 
         if profile_columns and "username" not in profile_columns:
             connection.execute(

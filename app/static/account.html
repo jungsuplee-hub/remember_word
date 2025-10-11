@@ -86,7 +86,41 @@
             <dt>총 로그인 횟수</dt>
             <dd id="account-login-count">-</dd>
           </div>
+          <div>
+            <dt>시험 합격 기준</dt>
+            <dd id="account-pass-threshold">-</dd>
+          </div>
         </dl>
+      </section>
+
+      <section class="panel account-panel">
+        <div class="panel-header">
+          <div class="panel-heading">
+            <h2>시험 합격 기준 설정</h2>
+            <span class="panel-subtitle">계정별 PASS 기준을 원하는 퍼센트로 지정하세요.</span>
+          </div>
+        </div>
+        <form id="preferences-form" class="form account-preferences-form">
+          <label>
+            합격 기준 점수 (%)
+            <input
+              type="number"
+              name="exam_pass_threshold"
+              id="exam-pass-threshold"
+              min="0"
+              max="100"
+              step="1"
+              required
+              inputmode="numeric"
+              pattern="[0-9]*"
+            />
+          </label>
+          <p class="form-description">
+            예: 85를 입력하면 정답률이 85% 이상일 때 Pass로 표시됩니다.
+          </p>
+          <button type="submit">저장</button>
+        </form>
+        <p id="preferences-feedback" class="form-feedback" role="status"></p>
       </section>
 
       <section class="panel account-panel">

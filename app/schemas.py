@@ -28,6 +28,12 @@ class PasswordChangeRequest(BaseModel):
     new_password: str = Field(..., description="새 비밀번호")
 
 
+class AccountPreferencesUpdate(BaseModel):
+    exam_pass_threshold: int = Field(
+        ..., ge=0, le=100, description="시험 합격 기준 (%)"
+    )
+
+
 class PasswordResetRequest(BaseModel):
     email: EmailStr
 
@@ -45,6 +51,7 @@ class SessionInfo(BaseModel):
     is_admin: bool
     last_login_at: Optional[datetime]
     login_count: int
+    exam_pass_threshold: int = Field(default=90, ge=0, le=100)
 
     class Config:
         from_attributes = True
@@ -58,6 +65,7 @@ class ProfileOut(BaseModel):
     is_admin: bool
     last_login_at: Optional[datetime]
     login_count: int
+    exam_pass_threshold: int = Field(default=90, ge=0, le=100)
 
     class Config:
         from_attributes = True
@@ -226,6 +234,15 @@ class StudyPlanMove(BaseModel):
     study_date: date = Field(..., description="학습 계획을 이동할 날짜")
 
 
+class StudyPlanExamSessionOut(BaseModel):
+    session_id: int
+    created_at: datetime
+    total: int
+    correct: int
+    score: float
+    passed: bool
+
+
 class StudyPlanOut(BaseModel):
     id: int
     study_date: date
@@ -233,6 +250,8 @@ class StudyPlanOut(BaseModel):
     folder_name: str
     group_id: int
     group_name: str
+    is_completed: bool = Field(default=False)
+    exam_sessions: List[StudyPlanExamSessionOut] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
