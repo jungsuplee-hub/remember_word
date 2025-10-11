@@ -34,6 +34,7 @@ def serialize_plan(plan: models.StudyPlan) -> dict:
 def list_study_plans(
     start: date | None = None,
     end: date | None = None,
+    tz_offset: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.Profile = Depends(require_current_user),
 ):
@@ -66,8 +67,10 @@ def list_study_plans(
     min_date = min(study_dates)
     max_date = max(study_dates)
 
-    start_dt = datetime.combine(min_date, time.min)
-    end_dt = datetime.combine(max_date + timedelta(days=1), time.min)
+    offset_delta = timedelta(minutes=tz_offset) if tz_offset else timedelta(0)
+
+    start_dt = datetime.combine(min_date, time.min) + offset_delta
+    end_dt = datetime.combine(max_date + timedelta(days=1), time.min) + offset_delta
 
     sessions = (
         db.query(models.QuizSession)
@@ -102,8 +105,9 @@ def list_study_plans(
 
     history_map: dict[tuple[int, date], list[dict]] = {}
     for session in sessions:
-        created_at = session.created_at or datetime.utcnow()
-        session_date = created_at.date()
+        created_at_utc = session.created_at or datetime.utcnow()
+        created_at_local = created_at_utc - offset_delta
+        session_date = created_at_local.date()
         if session_date < min_date or session_date > max_date:
             continue
 
@@ -112,7 +116,7 @@ def list_study_plans(
         score = (correct / total * 100) if total else 0.0
         entry = {
             "session_id": session.id,
-            "created_at": created_at,
+            "created_at": created_at_local,
             "total": total,
             "correct": correct,
             "score": round(score, 1),

@@ -3,6 +3,7 @@ const state = {
   todayIso: '',
   plans: [],
   planMap: new Map(),
+  timezoneOffset: new Date().getTimezoneOffset(),
 };
 
 const userGreeting = document.querySelector('#user-greeting');
@@ -374,6 +375,7 @@ async function fetchTodayPlans() {
   const iso = state.todayIso;
   try {
     const params = new URLSearchParams({ start: iso, end: iso });
+    params.set('tz_offset', String(state.timezoneOffset));
     const data = await api(`/study-plans?${params.toString()}`);
     const plans = Array.isArray(data) ? data : [];
     state.plans = plans
@@ -446,6 +448,7 @@ function scheduleMidnightRefresh() {
   const timeout = next.getTime() - now.getTime();
   setTimeout(async () => {
     state.today = new Date();
+    state.timezoneOffset = state.today.getTimezoneOffset();
     state.todayIso = formatISODate(state.today);
     await fetchTodayPlans();
     scheduleMidnightRefresh();
@@ -454,6 +457,7 @@ function scheduleMidnightRefresh() {
 
 async function init() {
   state.todayIso = formatISODate(state.today);
+  state.timezoneOffset = state.today.getTimezoneOffset();
   try {
     await Session.ensureAuthenticated();
     await fetchTodayPlans();
