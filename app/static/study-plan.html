@@ -56,10 +56,12 @@
 
     <main class="study-plan-layout">
       <section class="panel calendar-panel">
-        <div class="panel-header calendar-panel-header">
-          <div class="panel-heading">
+        <div class="calendar-panel-header">
+          <div class="calendar-panel-heading">
             <h2>학습 캘린더</h2>
-            <p class="panel-subtitle">날짜를 클릭하거나 계획을 드래그해 다른 날짜로 이동하세요.</p>
+            <p class="panel-subtitle">
+              날짜를 크게 확인하고, 클릭해서 해당 날짜의 계획을 편집하세요.
+            </p>
           </div>
           <div class="panel-controls calendar-controls" aria-live="polite">
             <button id="plan-prev-month" class="secondary" type="button" aria-label="이전 달">◀</button>
@@ -67,60 +69,79 @@
             <button id="plan-next-month" class="secondary" type="button" aria-label="다음 달">▶</button>
           </div>
         </div>
-        <div
-          id="study-plan-calendar"
-          class="calendar-grid"
-          role="grid"
-          aria-label="학습 계획 달력"
-        ></div>
-        <p class="calendar-help">달력에 표시된 학습 계획을 드래그해 다른 날짜로 이동할 수 있습니다.</p>
+        <div class="calendar-scroll" role="presentation">
+          <div
+            id="study-plan-calendar"
+            class="calendar-grid"
+            role="grid"
+            aria-label="학습 계획 달력"
+          ></div>
+        </div>
+        <div class="calendar-footer">
+          <p class="calendar-help">
+            날짜를 클릭하면 학습 계획 팝업이 열립니다. 이미 추가된 계획은 드래그해 다른 날짜로 옮길 수 있습니다.
+          </p>
+        </div>
       </section>
+    </main>
 
-      <section class="panel plan-detail-panel">
-        <div class="panel-header plan-detail-header">
-          <div class="panel-heading">
+    <div id="plan-modal" class="plan-modal" hidden aria-hidden="true">
+      <div class="plan-modal-backdrop" data-plan-close></div>
+      <div
+        class="plan-modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="plan-detail-title"
+        tabindex="-1"
+      >
+        <div class="plan-modal-header">
+          <div class="plan-modal-heading">
             <h2 id="plan-detail-title">날짜를 선택하세요</h2>
             <p id="plan-detail-subtitle" class="panel-subtitle">
               계획할 날짜를 선택하면 그룹을 추가하거나 삭제할 수 있습니다.
             </p>
           </div>
-          <div class="panel-controls plan-detail-controls">
+          <div class="plan-modal-actions">
             <button id="plan-clear-day" type="button" class="danger secondary" disabled>
               하루 계획 비우기
             </button>
+            <button type="button" class="plan-modal-close" aria-label="학습 계획 창 닫기" data-plan-close>
+              ✕
+            </button>
           </div>
         </div>
+        <div class="plan-modal-body">
+          <div class="plan-detail-body">
+            <ul id="plan-detail-list" class="plan-detail-list" aria-live="polite"></ul>
+            <p id="plan-detail-empty" class="empty-message">
+              아직 학습 계획이 없습니다. 아래에서 그룹을 선택해 추가해 보세요.
+            </p>
 
-        <div class="plan-detail-body">
-          <ul id="plan-detail-list" class="plan-detail-list" aria-live="polite"></ul>
-          <p id="plan-detail-empty" class="empty-message">
-            아직 학습 계획이 없습니다. 아래에서 그룹을 선택해 추가해 보세요.
-          </p>
-
-          <form id="plan-form" class="form plan-form" autocomplete="off">
-            <h3>그룹 추가</h3>
-            <div class="grid plan-form-grid">
-              <label>
-                폴더
-                <select id="plan-folder-select">
-                  <option value="">폴더 선택</option>
-                </select>
-              </label>
-              <label>
-                그룹
-                <select id="plan-group-select" multiple size="8" disabled>
-                  <option value="">그룹을 먼저 선택하세요.</option>
-                </select>
-                <span class="form-description">Ctrl/⌘ 키로 여러 그룹을 선택할 수 있습니다.</span>
-              </label>
-            </div>
-            <div class="plan-form-actions">
-              <button type="submit" class="primary" disabled>선택한 그룹 추가</button>
-            </div>
-          </form>
+            <form id="plan-form" class="form plan-form" autocomplete="off">
+              <h3>그룹 추가</h3>
+              <div class="grid plan-form-grid">
+                <label>
+                  폴더
+                  <select id="plan-folder-select">
+                    <option value="">폴더 선택</option>
+                  </select>
+                </label>
+                <label>
+                  그룹
+                  <select id="plan-group-select" multiple size="8" disabled>
+                    <option value="">그룹을 먼저 선택하세요.</option>
+                  </select>
+                  <span class="form-description">Ctrl/⌘ 키로 여러 그룹을 선택할 수 있습니다.</span>
+                </label>
+              </div>
+              <div class="plan-form-actions">
+                <button type="submit" class="primary" disabled>선택한 그룹 추가</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
     <div id="toast" role="status" aria-live="polite"></div>
 
