@@ -8,6 +8,7 @@ const state = {
   groupsByFolder: new Map(),
   activeFolderId: null,
   draggingPlan: null,
+  isPlanModalOpen: false,
 };
 
 const userGreeting = document.querySelector('#user-greeting');
@@ -28,6 +29,57 @@ const groupSelect = document.querySelector('#plan-group-select');
 const planForm = document.querySelector('#plan-form');
 const planSubmitButton = planForm?.querySelector('button[type="submit"]') || null;
 const toast = document.querySelector('#toast');
+const planModal = document.querySelector('#plan-modal');
+const planModalDialog = planModal?.querySelector('.plan-modal-dialog') || null;
+let lastFocusedElement = null;
+
+function setBodyModalState(open) {
+  if (open) {
+    document.body.classList.add('plan-modal-open');
+  } else {
+    document.body.classList.remove('plan-modal-open');
+  }
+}
+
+function openPlanModal() {
+  if (!planModal || !planModalDialog || !state.selectedDate) return;
+  lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  planModal.hidden = false;
+  planModal.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => {
+    planModal.classList.add('visible');
+  });
+  state.isPlanModalOpen = true;
+  setBodyModalState(true);
+  const selectedButton = calendarGrid?.querySelector(`.calendar-day[data-date="${state.selectedDate}"]`);
+  if (selectedButton) {
+    selectedButton.setAttribute('aria-expanded', 'true');
+  }
+  requestAnimationFrame(() => {
+    planModalDialog.focus();
+  });
+}
+
+function closePlanModal() {
+  if (!planModal) return;
+  planModal.classList.remove('visible');
+  planModal.setAttribute('aria-hidden', 'true');
+  state.isPlanModalOpen = false;
+  setBodyModalState(false);
+  const selectedButton = calendarGrid?.querySelector(`.calendar-day[data-date="${state.selectedDate}"]`);
+  if (selectedButton) {
+    selectedButton.setAttribute('aria-expanded', 'false');
+  }
+  setTimeout(() => {
+    if (!state.isPlanModalOpen) {
+      planModal.hidden = true;
+    }
+  }, 200);
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
+}
 
 function formatISODate(date) {
   const year = date.getFullYear();
@@ -209,13 +261,17 @@ function renderCalendar() {
     button.type = 'button';
     button.className = 'calendar-day';
     button.dataset.date = iso;
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-controls', 'plan-modal');
 
     if (!isSameMonth(current, state.currentMonth)) {
       button.classList.add('is-outside');
     }
-    if (iso === state.selectedDate) {
+    const isSelected = iso === state.selectedDate;
+    if (isSelected) {
       button.classList.add('is-selected');
     }
+    button.setAttribute('aria-expanded', state.isPlanModalOpen && isSelected ? 'true' : 'false');
 
     const dateLabel = document.createElement('span');
     dateLabel.className = 'calendar-date';
@@ -568,23 +624,34 @@ function handleDayDrop(event) {
   movePlan(state.draggingPlan.planId, targetDate);
 }
 
-function selectDate(iso) {
+function selectDate(iso, options = {}) {
   if (!iso) return;
   const selected = parseISODate(iso);
   if (!selected) return;
+  const { openModal = true } = options;
   const shouldChangeMonth = !isSameMonth(selected, state.currentMonth);
   state.selectedDate = iso;
   if (shouldChangeMonth) {
     state.currentMonth = startOfMonth(selected);
-    loadPlansForCurrentRange({ keepSelection: true });
+    loadPlansForCurrentRange({
+      keepSelection: true,
+      onRendered: () => {
+        if (openModal) {
+          openPlanModal();
+        }
+      },
+    });
   } else {
     renderCalendar();
     renderDetail();
+    if (openModal) {
+      openPlanModal();
+    }
   }
 }
 
 async function loadPlansForCurrentRange(options = {}) {
-  const { keepSelection = false } = options;
+  const { keepSelection = false, onRendered = null } = options;
   const monthStart = startOfMonth(state.currentMonth);
   const monthEnd = endOfMonth(state.currentMonth);
   const rangeStart = addDays(monthStart, -monthStart.getDay());
@@ -631,6 +698,9 @@ async function loadPlansForCurrentRange(options = {}) {
     }
     renderCalendar();
     renderDetail();
+    if (typeof onRendered === 'function') {
+      onRendered();
+    }
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -718,6 +788,24 @@ if (planForm) {
     });
   });
 }
+
+if (planModal) {
+  planModal.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.matches('[data-plan-close]')) {
+      event.preventDefault();
+      closePlanModal();
+    }
+  });
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && state.isPlanModalOpen) {
+    event.preventDefault();
+    closePlanModal();
+  }
+});
 
 if (prevMonthBtn) {
   prevMonthBtn.addEventListener('click', () => {
