@@ -437,13 +437,16 @@ def list_history(
         if group_name and group_name not in names:
             names.append(group_name)
 
+    threshold_percent = current_user.exam_pass_threshold or 90
+    normalized_threshold = max(0, min(100, threshold_percent)) / 100
+
     history: list[schemas.QuizHistoryItem] = []
     for session in sessions:
         total = session.total_questions or 0
         correct = session.correct_questions or 0
         incorrect = max(0, total - correct)
         score = (correct / total * 100) if total else 0.0
-        passed = total > 0 and (correct / total) >= 0.9
+        passed = total > 0 and (correct / total) >= normalized_threshold
         history.append(
             schemas.QuizHistoryItem(
                 session_id=session.id,
