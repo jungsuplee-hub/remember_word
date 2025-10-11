@@ -15,6 +15,17 @@ const state = {
   rangeEnd: null,
 };
 
+const urlParams = new URLSearchParams(window.location.search);
+
+function parseIdParam(value) {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+const initialFolderId = parseIdParam(urlParams.get('folder_id'));
+const initialGroupId = parseIdParam(urlParams.get('group_id'));
+
 const toast = document.querySelector('#toast');
 const folderSelect = document.querySelector('#memorize-folder');
 const groupSelect = document.querySelector('#memorize-group');
@@ -1004,11 +1015,34 @@ if (rangeForm) {
   });
 }
 
-Session.ensureAuthenticated()
-  .then(() => fetchFolders())
-  .catch((error) => {
+async function init() {
+  try {
+    await Session.ensureAuthenticated();
+    if (initialFolderId) {
+      state.activeFolderId = initialFolderId;
+    }
+    if (initialGroupId) {
+      state.activeGroupId = initialGroupId;
+    }
+    await fetchFolders();
+    if (state.activeFolderId) {
+      await fetchGroups();
+    }
+    if (window.location.search) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  } catch (error) {
     if (error.message !== 'unauthenticated') {
       console.error(error);
       showToast('세션을 확인하는 중 오류가 발생했습니다.', 'error');
     }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    init();
   });
+} else {
+  init();
+}

@@ -11,6 +11,37 @@ const state = {
   rangeGroupId: null,
 };
 
+const urlParams = new URLSearchParams(window.location.search);
+
+function parseIdParam(value) {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseGroupIds(params) {
+  const ids = [];
+  const seen = new Set();
+  const add = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0 || seen.has(parsed)) return;
+    seen.add(parsed);
+    ids.push(parsed);
+  };
+  params.getAll('group_id').forEach((value) => add(value));
+  params.getAll('group_ids').forEach((value) => {
+    String(value)
+      .split(',')
+      .map((token) => token.trim())
+      .filter(Boolean)
+      .forEach((token) => add(token));
+  });
+  return ids;
+}
+
+const initialFolderId = parseIdParam(urlParams.get('folder_id'));
+const initialGroupIds = parseGroupIds(urlParams);
+
 const toast = document.querySelector('#toast');
 const subtitle = document.querySelector('#exam-subtitle');
 const folderSelect = document.querySelector('#exam-folder');
@@ -641,6 +672,12 @@ async function fetchHistory(options = {}) {
 
 async function init() {
   await Session.ensureAuthenticated();
+  if (initialFolderId) {
+    state.activeFolderId = initialFolderId;
+  }
+  if (initialGroupIds.length) {
+    state.selectedGroupIds = [...initialGroupIds];
+  }
   if (form) {
     form.addEventListener('submit', handleStart);
   }
@@ -670,6 +707,9 @@ async function init() {
     showToast(returnMessage);
   }
   await fetchFolders();
+  if (window.location.search) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
   await fetchHistory();
   updateSubtitle();
 }

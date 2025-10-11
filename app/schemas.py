@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, Field, EmailStr, root_validator
 from typing import Optional, List, Literal
 
@@ -213,6 +213,26 @@ class QuizQuestionOut(BaseModel):
     answer: str
     star: int
     reading: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class StudyPlanSet(BaseModel):
+    group_ids: List[int] = Field(default_factory=list, description="선택한 그룹 ID 목록")
+
+
+class StudyPlanMove(BaseModel):
+    study_date: date = Field(..., description="학습 계획을 이동할 날짜")
+
+
+class StudyPlanOut(BaseModel):
+    id: int
+    study_date: date
+    folder_id: int
+    folder_name: str
+    group_id: int
+    group_name: str
 
     class Config:
         from_attributes = True
