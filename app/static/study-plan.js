@@ -11,6 +11,18 @@ const state = {
   isPlanModalOpen: false,
 };
 
+const touchDrag = {
+  active: false,
+  sourceEl: null,
+  dropTarget: null,
+  timeoutId: null,
+  started: false,
+  planId: null,
+  dateIso: null,
+  startX: 0,
+  startY: 0,
+};
+
 const userGreeting = document.querySelector('#user-greeting');
 const logoutButton = document.querySelector('#logout-button');
 const adminLink = document.querySelector('#admin-link');
@@ -232,9 +244,9 @@ function createCalendarChip(plan, dateIso, totalCount, plans) {
     chip.title = rest ? `추가 그룹: ${rest}` : chip.textContent;
     chip.classList.add('is-summary');
   }
-
   chip.addEventListener('dragstart', handlePlanDragStart);
   chip.addEventListener('dragend', handlePlanDragEnd);
+  chip.addEventListener('touchstart', handlePlanTouchStart, { passive: false });
   return chip;
 }
 
@@ -336,8 +348,17 @@ function createDetailListItem(plan) {
   removeBtn.dataset.planId = String(plan.id);
   removeBtn.textContent = '삭제';
 
+  const changeBtn = document.createElement('button');
+  changeBtn.type = 'button';
+  changeBtn.className = 'secondary';
+  changeBtn.dataset.action = 'change';
+  changeBtn.dataset.planId = String(plan.id);
+  changeBtn.dataset.planDate = plan.study_date;
+  changeBtn.textContent = '변경';
+
   actions.appendChild(memorizeBtn);
   actions.appendChild(examBtn);
+  actions.appendChild(changeBtn);
   actions.appendChild(removeBtn);
 
   item.appendChild(info);
@@ -345,6 +366,7 @@ function createDetailListItem(plan) {
 
   item.addEventListener('dragstart', handlePlanDragStart);
   item.addEventListener('dragend', handlePlanDragEnd);
+  item.addEventListener('touchstart', handlePlanTouchStart, { passive: false });
 
   return item;
 }
@@ -579,23 +601,158 @@ async function movePlan(planId, targetDate) {
   }
 }
 
+function clearDropTargets() {
+  calendarGrid?.querySelectorAll('.calendar-day.is-drop-target').forEach((el) => {
+    el.classList.remove('is-drop-target');
+  });
+}
+
+function beginPlanDrag(planId, dateIso, element) {
+  state.draggingPlan = { planId: Number(planId), sourceDate: dateIso };
+  element.classList.add('is-dragging');
+}
+
+function endPlanDrag(element, { clearState = true } = {}) {
+  if (element) {
+    element.classList.remove('is-dragging');
+  }
+  clearDropTargets();
+  if (clearState) {
+    state.draggingPlan = null;
+  }
+}
+
 function handlePlanDragStart(event) {
   const target = event.currentTarget;
   const planId = target.dataset.planId;
   const dateIso = target.dataset.date || state.selectedDate;
   if (!planId || !dateIso) return;
-  state.draggingPlan = { planId: Number(planId), sourceDate: dateIso };
+  beginPlanDrag(planId, dateIso, target);
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', planId);
-  target.classList.add('is-dragging');
 }
 
 function handlePlanDragEnd(event) {
-  event.currentTarget.classList.remove('is-dragging');
-  state.draggingPlan = null;
-  calendarGrid?.querySelectorAll('.calendar-day.is-drop-target').forEach((el) => {
-    el.classList.remove('is-drop-target');
-  });
+  endPlanDrag(event.currentTarget);
+}
+
+function handlePlanTouchStart(event) {
+  if (event.touches && event.touches.length > 1) {
+    return;
+  }
+  const target = event.currentTarget;
+  const planId = target.dataset.planId;
+  const dateIso = target.dataset.date || state.selectedDate;
+  if (!planId || !dateIso) return;
+  if (touchDrag.timeoutId) {
+    clearTimeout(touchDrag.timeoutId);
+  }
+  touchDrag.active = true;
+  touchDrag.started = false;
+  touchDrag.sourceEl = target;
+  touchDrag.dropTarget = null;
+  touchDrag.planId = planId;
+  touchDrag.dateIso = dateIso;
+  const touch = event.touches && event.touches[0];
+  touchDrag.startX = touch ? touch.clientX : 0;
+  touchDrag.startY = touch ? touch.clientY : 0;
+  touchDrag.timeoutId = window.setTimeout(() => {
+    touchDrag.started = true;
+    beginPlanDrag(planId, dateIso, target);
+  }, 200);
+}
+
+function handleGlobalTouchMove(event) {
+  if (!touchDrag.active) return;
+  const touch = event.touches && event.touches[0];
+  if (!touch) return;
+  if (!touchDrag.started) {
+    const deltaX = touch.clientX - touchDrag.startX;
+    const deltaY = touch.clientY - touchDrag.startY;
+    const distance = Math.hypot(deltaX, deltaY);
+    if (distance > 10) {
+      resetTouchDrag();
+    }
+    return;
+  }
+  if (!state.draggingPlan) return;
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  const element = document.elementFromPoint(touch.clientX, touch.clientY);
+  const dropTarget = element ? element.closest('.calendar-day') : null;
+  if (dropTarget !== touchDrag.dropTarget) {
+    if (touchDrag.dropTarget) {
+      touchDrag.dropTarget.classList.remove('is-drop-target');
+    }
+    if (dropTarget) {
+      dropTarget.classList.add('is-drop-target');
+    }
+    touchDrag.dropTarget = dropTarget;
+  }
+}
+
+function resetTouchDrag() {
+  if (touchDrag.timeoutId) {
+    clearTimeout(touchDrag.timeoutId);
+  }
+  touchDrag.timeoutId = null;
+  touchDrag.active = false;
+  touchDrag.started = false;
+  touchDrag.sourceEl = null;
+  touchDrag.dropTarget = null;
+  touchDrag.planId = null;
+  touchDrag.dateIso = null;
+  touchDrag.startX = 0;
+  touchDrag.startY = 0;
+}
+
+function handleGlobalTouchEnd(event) {
+  if (!touchDrag.active && !touchDrag.started) return;
+  if (touchDrag.timeoutId) {
+    clearTimeout(touchDrag.timeoutId);
+    touchDrag.timeoutId = null;
+  }
+  const started = touchDrag.started;
+  const sourceEl = touchDrag.sourceEl;
+  const dropTarget = touchDrag.dropTarget;
+  const dragging = state.draggingPlan;
+  resetTouchDrag();
+  if (!started) {
+    return;
+  }
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  if (!dragging) {
+    endPlanDrag(sourceEl);
+    return;
+  }
+  const targetDate = dropTarget?.dataset.date;
+  if (targetDate && targetDate !== dragging.sourceDate) {
+    endPlanDrag(sourceEl, { clearState: false });
+    movePlan(dragging.planId, targetDate);
+  } else {
+    endPlanDrag(sourceEl);
+  }
+}
+
+function handleGlobalTouchCancel(event) {
+  if (!touchDrag.active && !touchDrag.started) return;
+  if (touchDrag.timeoutId) {
+    clearTimeout(touchDrag.timeoutId);
+    touchDrag.timeoutId = null;
+  }
+  const started = touchDrag.started;
+  const sourceEl = touchDrag.sourceEl;
+  resetTouchDrag();
+  if (!started) {
+    return;
+  }
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  endPlanDrag(sourceEl);
 }
 
 function handleDayDragEnter(event) {
@@ -706,6 +863,48 @@ async function loadPlansForCurrentRange(options = {}) {
   }
 }
 
+function updatePlanDate(planId, currentDate) {
+  if (!Number.isFinite(planId)) return;
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.value = currentDate || '';
+  input.setAttribute('aria-hidden', 'true');
+  input.style.position = 'fixed';
+  input.style.opacity = '0';
+  input.style.pointerEvents = 'none';
+  input.style.width = '0';
+  input.style.height = '0';
+  document.body.appendChild(input);
+
+  const cleanup = () => {
+    input.removeEventListener('change', handleChange);
+    input.removeEventListener('blur', cleanup);
+    input.remove();
+  };
+
+  const handleChange = () => {
+    const value = input.value;
+    cleanup();
+    if (!value) {
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      showToast('올바른 날짜를 선택하세요.', 'error');
+      return;
+    }
+    movePlan(planId, value);
+  };
+
+  input.addEventListener('change', handleChange);
+  input.addEventListener('blur', cleanup, { once: true });
+
+  if (typeof input.showPicker === 'function') {
+    input.showPicker();
+  } else {
+    input.click();
+  }
+}
+
 function handleDetailAction(event) {
   const button = event.target.closest('button[data-action]');
   if (!button) return;
@@ -714,6 +913,14 @@ function handleDetailAction(event) {
     const planId = Number(button.dataset.planId);
     if (Number.isFinite(planId)) {
       removePlan(planId);
+    }
+    return;
+  }
+  if (action === 'change') {
+    const planId = Number(button.dataset.planId);
+    const planDate = button.dataset.planDate;
+    if (Number.isFinite(planId)) {
+      updatePlanDate(planId, planDate || state.selectedDate);
     }
     return;
   }
@@ -735,6 +942,12 @@ function handleDetailAction(event) {
 
 if (detailList) {
   detailList.addEventListener('click', handleDetailAction);
+}
+
+if ('ontouchstart' in window || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0)) {
+  document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+  document.addEventListener('touchend', handleGlobalTouchEnd, { passive: false });
+  document.addEventListener('touchcancel', handleGlobalTouchCancel, { passive: false });
 }
 
 if (clearDayButton) {
