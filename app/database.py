@@ -50,6 +50,27 @@ def ensure_schema() -> None:
                 )
             )
 
+        if "is_completed" not in quiz_session_columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE quiz_sessions ADD COLUMN is_completed BOOLEAN NOT NULL DEFAULT FALSE"
+                )
+            )
+            quiz_session_columns.add("is_completed")
+
+        if "is_completed" in quiz_session_columns:
+            connection.execute(
+                text(
+                    """
+                    UPDATE quiz_sessions
+                    SET is_completed = TRUE
+                    WHERE total_questions > 0
+                      AND answered_questions >= total_questions
+                      AND (is_completed IS NULL OR is_completed = FALSE)
+                    """
+                )
+            )
+
         try:
             profile_columns = {
                 column["name"] for column in inspector.get_columns("profiles")

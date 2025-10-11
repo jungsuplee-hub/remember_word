@@ -39,6 +39,7 @@ def dashboard(
     )
     quiz_counts = dict(
         db.query(models.QuizSession.profile_id, func.count(models.QuizSession.id))
+        .filter(models.QuizSession.is_completed.is_(True))
         .group_by(models.QuizSession.profile_id)
         .all()
     )

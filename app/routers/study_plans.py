@@ -82,6 +82,7 @@ def list_study_plans(
         .filter(
             models.QuizSession.profile_id == current_user.id,
             models.QuizSession.mode == "exam",
+            models.QuizSession.is_completed.is_(True),
             models.QuizSession.created_at >= start_dt,
             models.QuizSession.created_at < end_dt,
         )

@@ -241,6 +241,11 @@ def submit_answer(
         if word is not None:
             word.star = min(MAX_STAR_SCORE, (word.star or 0) + 1)
 
+    total_questions = session.total_questions or 0
+    session.is_completed = (
+        total_questions > 0 and session.answered_questions >= total_questions
+    )
+
     db.commit()
     db.refresh(session)
 
@@ -388,7 +393,10 @@ def list_history(
 ):
     sessions = (
         db.query(models.QuizSession)
-        .filter(models.QuizSession.profile_id == current_user.id)
+        .filter(
+            models.QuizSession.profile_id == current_user.id,
+            models.QuizSession.is_completed.is_(True),
+        )
         .order_by(models.QuizSession.created_at.desc())
         .limit(limit)
         .all()
