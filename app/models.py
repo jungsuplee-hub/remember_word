@@ -118,6 +118,9 @@ class QuizSession(Base):
     answered_questions = Column(Integer, nullable=False, default=0)
     correct_questions = Column(Integer, nullable=False, default=0)
     is_retry = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    is_completed = Column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
     created_at = Column(DateTime, server_default=func.now())
     profile = relationship("Profile", back_populates="sessions")
     group = relationship("Group", back_populates="quiz_sessions")
