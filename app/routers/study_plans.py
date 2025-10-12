@@ -138,7 +138,7 @@ def list_study_plans(
 
         scheduled_for_date = plan_groups_by_date.get(session_date)
         if entry["passed"] and scheduled_for_date and target_groups:
-            if len(target_groups) > 1 and scheduled_for_date.issuperset(target_groups):
+            if len(target_groups) > 1 and scheduled_for_date == target_groups:
                 target_groups = set(scheduled_for_date)
 
         for group_id in target_groups:
