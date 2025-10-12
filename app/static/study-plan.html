@@ -117,6 +117,28 @@
               아직 학습 계획이 없습니다. 아래에서 그룹을 선택해 추가해 보세요.
             </p>
 
+            <form id="plan-form" class="form plan-form" autocomplete="off">
+              <h3>그룹 추가</h3>
+              <div class="grid plan-form-grid">
+                <label>
+                  폴더
+                  <select id="plan-folder-select">
+                    <option value="">폴더 선택</option>
+                  </select>
+                </label>
+                <label>
+                  그룹
+                  <select id="plan-group-select" multiple size="8" disabled>
+                    <option value="">그룹을 먼저 선택하세요.</option>
+                  </select>
+                  <span class="form-description">Ctrl/⌘ 키로 여러 그룹을 선택할 수 있습니다.</span>
+                </label>
+              </div>
+              <div class="plan-form-actions">
+                <button type="submit" class="primary" disabled>선택한 그룹 추가</button>
+              </div>
+            </form>
+
             <section id="plan-memo-section" class="plan-memo-section">
               <div class="plan-memo-header">
                 <div class="plan-memo-heading">
@@ -150,28 +172,6 @@
                 </div>
               </form>
             </section>
-
-            <form id="plan-form" class="form plan-form" autocomplete="off">
-              <h3>그룹 추가</h3>
-              <div class="grid plan-form-grid">
-                <label>
-                  폴더
-                  <select id="plan-folder-select">
-                    <option value="">폴더 선택</option>
-                  </select>
-                </label>
-                <label>
-                  그룹
-                  <select id="plan-group-select" multiple size="8" disabled>
-                    <option value="">그룹을 먼저 선택하세요.</option>
-                  </select>
-                  <span class="form-description">Ctrl/⌘ 키로 여러 그룹을 선택할 수 있습니다.</span>
-                </label>
-              </div>
-              <div class="plan-form-actions">
-                <button type="submit" class="primary" disabled>선택한 그룹 추가</button>
-              </div>
-            </form>
           </div>
         </div>
       </div>
