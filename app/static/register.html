@@ -8,15 +8,12 @@
     <link rel="icon" type="image/png" href="/images/remember_word_log.png" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
-  <body data-public="true" data-guide-page="register" class="auth-page">
+  <body data-public="true" class="auth-page">
     <main class="auth-container">
       <section class="auth-card">
-        <div class="auth-card-header auth-card-header--with-actions">
-          <div class="auth-card-header-content">
-            <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="auth-logo" />
-            <h1>Remember Word 회원가입</h1>
-          </div>
-          <button type="button" class="auth-guide-button" data-guide-trigger>초보자 사용가이드</button>
+        <div class="auth-card-header">
+          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="auth-logo" />
+          <h1>Remember Word 회원가입</h1>
         </div>
         <form id="register-form" class="auth-form">
           <label>
@@ -80,30 +77,6 @@
 
     <div id="toast" role="status" aria-live="polite"></div>
 
-    <div id="guide-modal" class="guide-modal" hidden>
-      <div class="guide-modal-backdrop" data-guide-close></div>
-      <div
-        class="guide-modal-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="guide-modal-title"
-        tabindex="-1"
-        data-guide-dialog
-      >
-        <div class="guide-modal-header">
-          <h2 id="guide-modal-title" class="guide-modal-title">초보자 사용가이드</h2>
-          <button type="button" class="guide-modal-close" aria-label="가이드 닫기" data-guide-close>
-            ✕
-          </button>
-        </div>
-        <div id="guide-modal-body" class="guide-modal-body"></div>
-        <div class="guide-modal-footer">
-          <button type="button" class="link-button" data-guide-footer-close>닫기</button>
-        </div>
-      </div>
-    </div>
-
-    <script src="/static/guide.js" defer></script>
     <script src="/static/register.js" defer></script>
   </body>
 </html>
