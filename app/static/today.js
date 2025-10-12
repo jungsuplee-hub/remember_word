@@ -15,6 +15,7 @@ const accountLink = document.querySelector('#account-link');
 const titleEl = document.querySelector('#today-title');
 const subtitleEl = document.querySelector('#today-subtitle');
 const emptyEl = document.querySelector('#today-empty');
+const emptyMessageEl = document.querySelector('#today-empty-message');
 const listEl = document.querySelector('#today-plan-list');
 const toast = document.querySelector('#toast');
 const historyModal = document.querySelector('#today-history-modal');
@@ -401,6 +402,9 @@ function renderPlans() {
     if (emptyEl) {
       emptyEl.hidden = false;
     }
+    if (emptyMessageEl) {
+      emptyMessageEl.hidden = false;
+    }
     if (listEl) {
       listEl.innerHTML = '';
       listEl.hidden = true;
@@ -413,6 +417,9 @@ function renderPlans() {
   }
   if (emptyEl) {
     emptyEl.hidden = true;
+  }
+  if (emptyMessageEl) {
+    emptyMessageEl.hidden = true;
   }
   if (!listEl) return;
 
