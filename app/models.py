@@ -75,6 +75,9 @@ class Profile(Base):
     folders = relationship("Folder", back_populates="profile", cascade="all,delete")
     groups = relationship("Group", back_populates="profile", cascade="all,delete")
     study_plans = relationship("StudyPlan", back_populates="profile", cascade="all,delete")
+    study_plan_memos = relationship(
+        "StudyPlanMemo", back_populates="profile", cascade="all,delete"
+    )
     social_accounts = relationship(
         "SocialAccount",
         back_populates="profile",
@@ -161,6 +164,26 @@ class StudyPlan(Base):
             "study_date",
             "group_id",
             name="uq_study_plan_profile_date_group",
+        ),
+    )
+
+
+class StudyPlanMemo(Base):
+    __tablename__ = "study_plan_memos"
+    id = Column(Integer, primary_key=True)
+    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    study_date = Column(Date, nullable=False)
+    memo = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    profile = relationship("Profile", back_populates="study_plan_memos")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "profile_id",
+            "study_date",
+            name="uq_study_plan_memo_profile_date",
         ),
     )
 

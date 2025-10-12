@@ -234,6 +234,18 @@ class StudyPlanMove(BaseModel):
     study_date: date = Field(..., description="학습 계획을 이동할 날짜")
 
 
+class StudyPlanMemoUpdate(BaseModel):
+    memo: Optional[str] = Field(default=None, description="선택한 날짜에 대한 메모 내용")
+
+
+class StudyPlanMemoOut(BaseModel):
+    study_date: date
+    memo: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class StudyPlanExamSessionOut(BaseModel):
     session_id: int
     created_at: datetime
@@ -252,6 +264,7 @@ class StudyPlanOut(BaseModel):
     group_name: str
     is_completed: bool = Field(default=False)
     exam_sessions: List[StudyPlanExamSessionOut] = Field(default_factory=list)
+    day_memo: Optional[str] = Field(default=None, description="해당 날짜에 저장된 메모")
 
     class Config:
         from_attributes = True
