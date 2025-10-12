@@ -2298,10 +2298,32 @@ body.modal-open {
 .auth-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: clamp(2rem, 5vw, 3.5rem);
   padding: clamp(1.5rem, 4vw, 3rem);
-  background: #f8f9fb;
+  background: transparent;
+}
+
+.auth-page--with-header {
+  justify-content: flex-start;
+  padding-top: clamp(2rem, 6vw, 4.25rem);
+  padding-bottom: clamp(2rem, 6vw, 4.25rem);
+}
+
+.auth-page--with-header > header {
+  align-self: stretch;
+}
+
+.auth-main {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-page--with-header .auth-main {
+  margin-top: clamp(0.5rem, 3vw, 1.75rem);
 }
 
 .auth-container {
@@ -2310,13 +2332,18 @@ body.modal-open {
   gap: 1.5rem;
 }
 
+.auth-page--with-header .auth-container {
+  width: min(720px, 100%);
+}
+
 .auth-card {
-  background: #ffffff;
-  border-radius: 16px;
+  background: var(--color-surface-strong);
+  backdrop-filter: blur(14px);
+  border-radius: var(--radius-md);
   padding: clamp(1.5rem, 4vw, 2rem);
-  color: #1e293b;
-  box-shadow: 0 25px 50px -30px rgba(15, 23, 42, 0.35);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #0f172a;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .auth-card h1,
