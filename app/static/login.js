@@ -12,6 +12,12 @@ const resetRequestEmailInput = resetRequestForm?.querySelector('input[name="emai
 const resetConfirmTokenInput = resetConfirmForm?.querySelector('input[name="token"]');
 const toast = document.querySelector('#toast');
 const socialButtons = document.querySelectorAll('[data-social-login]');
+const loginUsernameInput = loginForm?.querySelector('input[name="username"]');
+const loginPasswordInput = loginForm?.querySelector('input[name="password"]');
+const LOGIN_AUTO_SUBMIT_WINDOW_MS = 5000;
+const loginPageLoadedAt = Date.now();
+let loginAutoSubmitAttempted = false;
+let loginFormInteractionDetected = false;
 
 function showToast(message, type = 'info') {
   if (!toast) return;
@@ -44,6 +50,110 @@ function startSocialLogin(provider) {
     target.searchParams.set('next', nextUrl);
   }
   window.location.href = target.toString();
+}
+
+function markLoginFormInteraction() {
+  loginFormInteractionDetected = true;
+  if (loginUsernameInput) {
+    delete loginUsernameInput.dataset.autofilled;
+  }
+  if (loginPasswordInput) {
+    delete loginPasswordInput.dataset.autofilled;
+  }
+}
+
+function registerLoginInteractionWatchers() {
+  if (!loginForm) {
+    return;
+  }
+  loginForm.addEventListener('keydown', markLoginFormInteraction, { once: true });
+  loginForm.addEventListener('mousedown', markLoginFormInteraction, { once: true });
+  loginForm.addEventListener('touchstart', markLoginFormInteraction, { once: true });
+}
+
+function attemptAutoSubmitLogin() {
+  if (!loginForm || loginAutoSubmitAttempted) {
+    return false;
+  }
+  if (!loginUsernameInput || !loginPasswordInput) {
+    return false;
+  }
+  const username = loginUsernameInput.value?.trim();
+  const password = loginPasswordInput.value;
+  if (!username || !password) {
+    return false;
+  }
+  if (loginFormInteractionDetected) {
+    return false;
+  }
+  const hasAutofillSignal =
+    loginUsernameInput.dataset.autofilled === 'true' ||
+    loginPasswordInput.dataset.autofilled === 'true';
+  const withinAutoSubmitWindow = Date.now() - loginPageLoadedAt <= LOGIN_AUTO_SUBMIT_WINDOW_MS;
+  if (!hasAutofillSignal && !withinAutoSubmitWindow) {
+    return false;
+  }
+  loginAutoSubmitAttempted = true;
+  loginFormInteractionDetected = true;
+  loginForm.requestSubmit();
+  return true;
+}
+
+function initLoginAutofillAutomation() {
+  if (!loginForm || !loginUsernameInput || !loginPasswordInput) {
+    return;
+  }
+
+  const handleAutofillAnimation = (event) => {
+    if (event.animationName === 'authAutofillStart') {
+      event.target.dataset.autofilled = 'true';
+      window.requestAnimationFrame(() => attemptAutoSubmitLogin());
+    }
+    if (event.animationName === 'authAutofillCancel') {
+      delete event.target.dataset.autofilled;
+    }
+  };
+
+  loginUsernameInput.addEventListener('animationstart', handleAutofillAnimation);
+  loginPasswordInput.addEventListener('animationstart', handleAutofillAnimation);
+
+  loginUsernameInput.addEventListener('input', () => {
+    delete loginUsernameInput.dataset.autofilled;
+  });
+  loginPasswordInput.addEventListener('input', () => {
+    delete loginPasswordInput.dataset.autofilled;
+  });
+
+  loginUsernameInput.addEventListener('change', () => attemptAutoSubmitLogin());
+  loginPasswordInput.addEventListener('change', () => attemptAutoSubmitLogin());
+
+  let attempts = 0;
+  const intervalId = setInterval(() => {
+    attempts += 1;
+    const shouldStop = attempts * 250 >= LOGIN_AUTO_SUBMIT_WINDOW_MS;
+    if (attemptAutoSubmitLogin() || shouldStop) {
+      clearInterval(intervalId);
+    }
+  }, 250);
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (!document.hidden) {
+        window.setTimeout(() => attemptAutoSubmitLogin(), 120);
+      }
+    },
+    { once: true },
+  );
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      loginAutoSubmitAttempted = false;
+      loginFormInteractionDetected = false;
+      registerLoginInteractionWatchers();
+      window.setTimeout(() => attemptAutoSubmitLogin(), 120);
+    }
+  });
 }
 
 async function handleLogin(event) {
@@ -187,6 +297,8 @@ async function checkExistingSession() {
 
 if (loginForm) {
   loginForm.addEventListener('submit', handleLogin);
+  registerLoginInteractionWatchers();
+  initLoginAutofillAutomation();
 }
 if (resetRequestForm) {
   resetRequestForm.addEventListener('submit', handleResetRequest);
