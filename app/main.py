@@ -30,6 +30,26 @@ from routers import (
 from utils.auth import SESSION_MAX_AGE_SECONDS
 from utils.bootstrap import ensure_default_accounts
 
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):  # type: ignore[override]
+        response = await super().get_response(path, scope)
+        if response.status_code < 400:
+            response.headers.update(NO_CACHE_HEADERS)
+        return response
+
+
+def apply_no_cache_headers(response):
+    response.headers.update(NO_CACHE_HEADERS)
+    return response
+
+
 app = FastAPI(title="Remember Word", version="1.0")
 
 app.add_middleware(
@@ -41,10 +61,10 @@ app.add_middleware(
 )
 
 if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.mount("/static", NoCacheStaticFiles(directory=STATIC_DIR), name="static")
 
 if IMAGES_DIR.exists():
-    app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
+    app.mount("/images", NoCacheStaticFiles(directory=IMAGES_DIR), name="images")
 
 
 ensure_schema()
@@ -66,7 +86,7 @@ def root(request: Request):
         return JSONResponse({"message": "Remember Word API running on port 8080"})
     if not request.session.get("user_id"):
         return RedirectResponse(url="/static/login.html", status_code=303)
-    return FileResponse(entry_path)
+    return apply_no_cache_headers(FileResponse(entry_path))
 
 
 app.include_router(folders.router, prefix="/folders", tags=["folders"])
