@@ -70,23 +70,27 @@
           </div>
         </div>
 
-        <div id="today-memo" class="today-memo" hidden>
-          <h3 class="today-memo-title">오늘의 메모</h3>
-          <p id="today-memo-content" class="today-memo-content"></p>
-        </div>
+        <div class="today-body">
+          <div class="today-main">
+            <p id="today-empty-message" class="today-empty-message" role="status">
+              학습계획을 입력하시거나 단어암기 버튼을 눌러서 공부해 주세요.
+            </p>
 
-        <p id="today-empty-message" class="today-empty-message" role="status">
-          학습계획을 입력하시거나 단어암기 버튼을 눌러서 공부해 주세요.
-        </p>
+            <div id="today-empty" class="today-empty">
+              <div class="today-empty-actions">
+                <a href="/static/study-plan.html" class="link-button secondary">학습 계획 설정</a>
+                <a href="/static/memorize.html" class="link-button">단어 암기</a>
+              </div>
+            </div>
 
-        <div id="today-empty" class="today-empty">
-          <div class="today-empty-actions">
-            <a href="/static/study-plan.html" class="link-button secondary">학습 계획 설정</a>
-            <a href="/static/memorize.html" class="link-button">단어 암기</a>
+            <ul id="today-plan-list" class="today-plan-list" hidden></ul>
           </div>
-        </div>
 
-        <ul id="today-plan-list" class="today-plan-list" hidden></ul>
+          <aside id="today-memo" class="today-memo" hidden>
+            <h3 class="today-memo-title">오늘의 메모</h3>
+            <p id="today-memo-content" class="today-memo-content"></p>
+          </aside>
+        </div>
       </section>
     </main>
 
