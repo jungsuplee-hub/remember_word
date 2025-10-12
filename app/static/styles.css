@@ -54,7 +54,7 @@ body::after {
 
 header {
   padding: clamp(2.5rem, 6vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(2rem, 5vw, 3.5rem);
-  color: white;
+  color: #14213d;
   position: relative;
   overflow: hidden;
 }
@@ -180,6 +180,7 @@ header h1 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 2.75rem);
   font-weight: 700;
+  color: #0f172a;
 }
 
 .header-description {
@@ -187,6 +188,7 @@ header h1 {
   opacity: 0.88;
   font-size: clamp(1rem, 2.4vw, 1.125rem);
   line-height: 1.6;
+  color: rgba(15, 23, 42, 0.82);
 }
 
 body[data-guide-page="manage"] .header-description {
@@ -208,7 +210,7 @@ body[data-guide-page="manage"] .header-description {
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
-  color: white;
+  color: #1b2554;
   font-size: 0.85rem;
   letter-spacing: 0.01em;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
@@ -268,19 +270,38 @@ body[data-guide-page="manage"] .header-description {
   opacity: 0.85;
 }
 
+header .link-button {
+  color: #14213d;
+}
+
 .link-button {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
   padding: 0.65rem 1.3rem;
   background: rgba(255, 255, 255, 0.18);
-  color: white;
   border-radius: 999px;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   backdrop-filter: blur(2px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+header .link-button.primary-action {
+  color: #0f172a;
+}
+
+header .link-button.tertiary-action {
+  color: #f8fbff;
+}
+
+header .hero-stat-value {
+  color: #0f172a;
+}
+
+header .hero-stat-label {
+  color: rgba(15, 23, 42, 0.68);
 }
 
 .link-button.guide-button {
