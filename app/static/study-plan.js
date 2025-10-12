@@ -5,6 +5,11 @@ const state = {
   currentMonth: new Date(today.getFullYear(), today.getMonth(), 1),
   selectedDate: null,
   plansByDate: new Map(),
+  memosByDate: new Map(),
+  memoDrafts: new Map(),
+  memoLoadedDates: new Set(),
+  memoLoadingDates: new Set(),
+  memoSavingDates: new Set(),
   folders: [],
   groupsByFolder: new Map(),
   activeFolderId: null,
@@ -41,6 +46,12 @@ const folderSelect = document.querySelector('#plan-folder-select');
 const groupSelect = document.querySelector('#plan-group-select');
 const planForm = document.querySelector('#plan-form');
 const planSubmitButton = planForm?.querySelector('button[type="submit"]') || null;
+const planMemoSection = document.querySelector('#plan-memo-section');
+const planMemoForm = document.querySelector('#plan-memo-form');
+const planMemoTextarea = document.querySelector('#plan-memo-text');
+const planMemoSaveButton = document.querySelector('#plan-memo-save');
+const planMemoClearButton = document.querySelector('#plan-memo-clear');
+const planMemoFeedback = document.querySelector('#plan-memo-feedback');
 const toast = document.querySelector('#toast');
 const planModal = document.querySelector('#plan-modal');
 const planModalDialog = planModal?.querySelector('.plan-modal-dialog') || null;
@@ -153,6 +164,180 @@ function showToast(message, type = 'info') {
   toast.dataset.type = type;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function normalizeMemoValue(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value !== 'string') return String(value);
+  return value.replace(/\r\n/g, '\n');
+}
+
+function getSavedMemo(dateIso) {
+  if (!dateIso) return '';
+  if (!state.memosByDate.has(dateIso)) return '';
+  return normalizeMemoValue(state.memosByDate.get(dateIso));
+}
+
+function getDraftMemo(dateIso) {
+  if (!dateIso) return '';
+  if (state.memoDrafts.has(dateIso)) {
+    return normalizeMemoValue(state.memoDrafts.get(dateIso));
+  }
+  return getSavedMemo(dateIso);
+}
+
+function setDraftMemo(dateIso, value) {
+  if (!dateIso) return;
+  state.memoDrafts.set(dateIso, normalizeMemoValue(value));
+}
+
+function setSavedMemo(dateIso, value, { markLoaded = true } = {}) {
+  if (!dateIso) return;
+  const normalized = normalizeMemoValue(value);
+  const previousSaved = getSavedMemo(dateIso);
+  const hadDraft = state.memoDrafts.has(dateIso);
+  const draftBefore = hadDraft
+    ? normalizeMemoValue(state.memoDrafts.get(dateIso))
+    : previousSaved;
+  const wasDirty = hadDraft ? draftBefore !== previousSaved : false;
+
+  state.memosByDate.set(dateIso, normalized);
+  if (markLoaded) {
+    state.memoLoadedDates.add(dateIso);
+  }
+
+  if (!wasDirty) {
+    state.memoDrafts.set(dateIso, normalized);
+    if (state.selectedDate === dateIso && planMemoTextarea && planMemoTextarea.value !== normalized) {
+      planMemoTextarea.value = normalized;
+    }
+  }
+
+  if (state.selectedDate === dateIso) {
+    updateMemoControls();
+  }
+}
+
+function isMemoDirty(dateIso) {
+  if (!dateIso) return false;
+  return getDraftMemo(dateIso) !== getSavedMemo(dateIso);
+}
+
+function updateMemoControls() {
+  if (!planMemoTextarea || !planMemoSaveButton) return;
+  const iso = state.selectedDate;
+  if (!iso) {
+    planMemoTextarea.value = '';
+    planMemoTextarea.disabled = true;
+    planMemoTextarea.placeholder = '날짜를 선택하면 메모를 작성할 수 있습니다.';
+    planMemoSaveButton.disabled = true;
+    planMemoSaveButton.textContent = '메모 저장';
+    if (planMemoClearButton) {
+      planMemoClearButton.disabled = true;
+    }
+    if (planMemoFeedback) {
+      planMemoFeedback.textContent = '날짜를 선택하세요.';
+    }
+    if (planMemoSection) {
+      planMemoSection.classList.add('is-disabled');
+    }
+    return;
+  }
+
+  const loading = state.memoLoadingDates.has(iso);
+  const saving = state.memoSavingDates.has(iso);
+  const busy = loading || saving;
+  const draft = getDraftMemo(iso);
+  const savedMemo = getSavedMemo(iso);
+  const dirty = isMemoDirty(iso);
+
+  if (planMemoTextarea.value !== draft) {
+    planMemoTextarea.value = draft;
+  }
+  planMemoTextarea.disabled = loading;
+  planMemoTextarea.placeholder = '선택한 날짜에 대한 메모를 입력하세요.';
+
+  planMemoSaveButton.disabled = !dirty || saving;
+  planMemoSaveButton.textContent = saving ? '저장 중...' : '메모 저장';
+
+  if (planMemoClearButton) {
+    planMemoClearButton.disabled = busy || (!draft && !savedMemo);
+  }
+
+  if (planMemoFeedback) {
+    if (loading) {
+      planMemoFeedback.textContent = '메모를 불러오는 중입니다...';
+    } else if (saving) {
+      planMemoFeedback.textContent = '메모를 저장하는 중입니다...';
+    } else if (dirty) {
+      planMemoFeedback.textContent = '저장되지 않은 변경사항이 있습니다.';
+    } else if (savedMemo) {
+      planMemoFeedback.textContent = '메모가 저장되어 있습니다.';
+    } else {
+      planMemoFeedback.textContent = '메모가 비어 있습니다.';
+    }
+  }
+
+  if (planMemoSection) {
+    planMemoSection.classList.toggle('is-disabled', loading);
+  }
+}
+
+async function fetchMemoForDate(dateIso) {
+  if (!dateIso || state.memoLoadingDates.has(dateIso)) return;
+  state.memoLoadingDates.add(dateIso);
+  updateMemoControls();
+  try {
+    const data = await api(`/study-plans/memo/${dateIso}`);
+    const memoText = data && Object.prototype.hasOwnProperty.call(data, 'memo') ? data.memo : null;
+    setSavedMemo(dateIso, memoText, { markLoaded: true });
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    state.memoLoadingDates.delete(dateIso);
+    if (state.selectedDate === dateIso) {
+      updateMemoControls();
+    }
+  }
+}
+
+function ensureMemoLoaded(dateIso) {
+  if (!dateIso) {
+    updateMemoControls();
+    return;
+  }
+  if (state.memoLoadedDates.has(dateIso)) {
+    updateMemoControls();
+    return;
+  }
+  fetchMemoForDate(dateIso);
+}
+
+async function saveMemoForSelectedDate() {
+  const iso = state.selectedDate;
+  if (!iso) return;
+  if (!planMemoTextarea) return;
+  if (!isMemoDirty(iso)) {
+    showToast('변경된 내용이 없습니다.', 'info');
+    return;
+  }
+  const payload = { memo: getDraftMemo(iso) };
+  state.memoSavingDates.add(iso);
+  updateMemoControls();
+  try {
+    const result = await api(`/study-plans/memo/${iso}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    const memoText = result && Object.prototype.hasOwnProperty.call(result, 'memo') ? result.memo : null;
+    setSavedMemo(iso, memoText, { markLoaded: true });
+    showToast(memoText ? '메모를 저장했어요.' : '메모를 비웠습니다.', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    state.memoSavingDates.delete(iso);
+    updateMemoControls();
+  }
 }
 
 function updateUserMenu(user) {
@@ -439,6 +624,7 @@ function renderDetail() {
       clearDayButton.disabled = true;
     }
     refreshGroupAvailability();
+    updateMemoControls();
     return;
   }
 
@@ -471,6 +657,7 @@ function renderDetail() {
     }
   }
   refreshGroupAvailability();
+  updateMemoControls();
 }
 
 function renderFolders() {
@@ -559,9 +746,13 @@ async function persistDay(dateIso, groupIds) {
     });
     const normalized = Array.isArray(plans) ? plans : [];
     setPlansForDate(dateIso, normalized);
+    if (normalized.length && Object.prototype.hasOwnProperty.call(normalized[0], 'day_memo')) {
+      setSavedMemo(dateIso, normalized[0].day_memo, { markLoaded: true });
+    }
     renderCalendar();
     if (state.selectedDate === dateIso) {
       renderDetail();
+      ensureMemoLoaded(dateIso);
     }
     showToast('학습 계획을 저장했습니다.', 'success');
   } catch (error) {
@@ -623,8 +814,14 @@ async function movePlan(planId, targetDate) {
     const list = state.plansByDate.get(updatedPlan.study_date) || [];
     list.push(updatedPlan);
     setPlansForDate(updatedPlan.study_date, list);
+    if (Object.prototype.hasOwnProperty.call(updatedPlan, 'day_memo')) {
+      setSavedMemo(updatedPlan.study_date, updatedPlan.day_memo, { markLoaded: true });
+    }
     renderCalendar();
     renderDetail();
+    if (state.selectedDate === updatedPlan.study_date) {
+      ensureMemoLoaded(updatedPlan.study_date);
+    }
     showToast('학습 계획을 이동했습니다.', 'success');
   } catch (error) {
     showToast(error.message, 'error');
@@ -825,6 +1022,7 @@ function selectDate(iso, options = {}) {
     loadPlansForCurrentRange({
       keepSelection: true,
       onRendered: () => {
+        ensureMemoLoaded(iso);
         if (openModal) {
           openPlanModal();
         }
@@ -833,6 +1031,7 @@ function selectDate(iso, options = {}) {
   } else {
     renderCalendar();
     renderDetail();
+    ensureMemoLoaded(iso);
     if (openModal) {
       openPlanModal();
     }
@@ -853,15 +1052,25 @@ async function loadPlansForCurrentRange(options = {}) {
     const data = await api(`/study-plans?${params.toString()}`);
     const plans = Array.isArray(data) ? data : [];
     state.plansByDate.clear();
+    const memoByDate = new Map();
     plans.forEach((plan) => {
       const iso = plan.study_date;
+      if (!iso) {
+        return;
+      }
       const list = state.plansByDate.get(iso) || [];
       list.push(plan);
       state.plansByDate.set(iso, list);
+      if (!memoByDate.has(iso) && Object.prototype.hasOwnProperty.call(plan, 'day_memo')) {
+        memoByDate.set(iso, plan.day_memo);
+      }
     });
     for (const [iso, list] of state.plansByDate.entries()) {
       setPlansForDate(iso, list);
     }
+    memoByDate.forEach((memoValue, iso) => {
+      setSavedMemo(iso, memoValue, { markLoaded: true });
+    });
 
     if (!keepSelection) {
       const todayIso = formatISODate(today);
@@ -887,6 +1096,11 @@ async function loadPlansForCurrentRange(options = {}) {
     }
     renderCalendar();
     renderDetail();
+    if (state.selectedDate) {
+      ensureMemoLoaded(state.selectedDate);
+    } else {
+      updateMemoControls();
+    }
     if (typeof onRendered === 'function') {
       onRendered();
     }
@@ -1002,6 +1216,33 @@ if (groupSelect) {
   });
 }
 
+if (planMemoTextarea) {
+  planMemoTextarea.addEventListener('input', (event) => {
+    if (!state.selectedDate) return;
+    const value = typeof event.target?.value === 'string' ? event.target.value : planMemoTextarea.value;
+    setDraftMemo(state.selectedDate, value);
+    updateMemoControls();
+  });
+}
+
+if (planMemoClearButton) {
+  planMemoClearButton.addEventListener('click', () => {
+    if (!state.selectedDate) return;
+    setDraftMemo(state.selectedDate, '');
+    if (planMemoTextarea) {
+      planMemoTextarea.value = '';
+    }
+    updateMemoControls();
+  });
+}
+
+if (planMemoForm) {
+  planMemoForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await saveMemoForSelectedDate();
+  });
+}
+
 if (planForm) {
   planForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -1078,6 +1319,8 @@ async function init() {
     }
   }
 }
+
+updateMemoControls();
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {

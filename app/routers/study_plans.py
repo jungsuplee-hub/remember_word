@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
-
 from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,7 +13,7 @@ from utils.auth import require_current_user
 router = APIRouter()
 
 
-def serialize_plan(plan: models.StudyPlan) -> dict:
+def serialize_plan(plan: models.StudyPlan, memo: str | None = None) -> dict:
     folder_name = plan.folder.name if getattr(plan, "folder", None) else ""
     group_name = plan.group.name if getattr(plan, "group", None) else ""
     return {
@@ -27,6 +25,7 @@ def serialize_plan(plan: models.StudyPlan) -> dict:
         "group_name": group_name,
         "is_completed": False,
         "exam_sessions": [],
+        "day_memo": memo,
     }
 
 
@@ -53,24 +52,38 @@ def list_study_plans(
         query = query.filter(models.StudyPlan.study_date <= end)
 
     plans = query.order_by(models.StudyPlan.study_date, models.StudyPlan.id).all()
-    serialized = [serialize_plan(plan) for plan in plans]
+
+    study_dates = {plan.study_date for plan in plans if plan.study_date is not None}
+    memo_map: dict[date, str | None] = {}
+    if study_dates:
+        memo_rows = (
+            db.query(models.StudyPlanMemo)
+            .filter(
+                models.StudyPlanMemo.profile_id == current_user.id,
+                models.StudyPlanMemo.study_date.in_(study_dates),
+            )
+            .all()
+        )
+        memo_map = {row.study_date: row.memo for row in memo_rows}
+
+    serialized = [serialize_plan(plan, memo_map.get(plan.study_date)) for plan in plans]
 
     if not serialized:
         return serialized
 
     group_ids = {plan.group_id for plan in plans}
-    study_dates = [plan.study_date for plan in plans if plan.study_date is not None]
+    study_dates_list = [plan.study_date for plan in plans if plan.study_date is not None]
     plan_groups_by_date: dict[date, set[int]] = {}
     for plan in plans:
         if plan.study_date is None:
             continue
         plan_groups_by_date.setdefault(plan.study_date, set()).add(plan.group_id)
 
-    if not group_ids or not study_dates:
+    if not group_ids or not study_dates_list:
         return serialized
 
-    min_date = min(study_dates)
-    max_date = max(study_dates)
+    min_date = min(study_dates_list)
+    max_date = max(study_dates_list)
 
     offset_delta = timedelta(minutes=tz_offset) if tz_offset else timedelta(0)
 
@@ -224,7 +237,73 @@ def set_study_plan(
         .all()
     )
 
-    return [serialize_plan(plan) for plan in refreshed]
+    memo_entry = (
+        db.query(models.StudyPlanMemo)
+        .filter(
+            models.StudyPlanMemo.profile_id == current_user.id,
+            models.StudyPlanMemo.study_date == study_date,
+        )
+        .one_or_none()
+    )
+    memo_text = memo_entry.memo if memo_entry else None
+
+    return [serialize_plan(plan, memo_text) for plan in refreshed]
+
+
+@router.get("/memo/{study_date}", response_model=schemas.StudyPlanMemoOut)
+def get_study_day_memo(
+    study_date: date,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    memo_entry = (
+        db.query(models.StudyPlanMemo)
+        .filter(
+            models.StudyPlanMemo.profile_id == current_user.id,
+            models.StudyPlanMemo.study_date == study_date,
+        )
+        .one_or_none()
+    )
+    if memo_entry:
+        return schemas.StudyPlanMemoOut(study_date=memo_entry.study_date, memo=memo_entry.memo)
+    return schemas.StudyPlanMemoOut(study_date=study_date, memo=None)
+
+
+@router.put("/memo/{study_date}", response_model=schemas.StudyPlanMemoOut)
+def set_study_day_memo(
+    study_date: date,
+    payload: schemas.StudyPlanMemoUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.Profile = Depends(require_current_user),
+):
+    memo_text = payload.memo.strip() if payload.memo else ""
+
+    memo_entry = (
+        db.query(models.StudyPlanMemo)
+        .filter(
+            models.StudyPlanMemo.profile_id == current_user.id,
+            models.StudyPlanMemo.study_date == study_date,
+        )
+        .one_or_none()
+    )
+
+    if not memo_text:
+        if memo_entry:
+            db.delete(memo_entry)
+            db.commit()
+        return schemas.StudyPlanMemoOut(study_date=study_date, memo=None)
+
+    if memo_entry:
+        memo_entry.memo = memo_text
+    else:
+        memo_entry = models.StudyPlanMemo(
+            profile_id=current_user.id, study_date=study_date, memo=memo_text
+        )
+        db.add(memo_entry)
+
+    db.commit()
+    db.refresh(memo_entry)
+    return schemas.StudyPlanMemoOut(study_date=memo_entry.study_date, memo=memo_entry.memo)
 
 
 @router.patch("/{plan_id}", response_model=schemas.StudyPlanOut)
@@ -253,7 +332,17 @@ def move_study_plan(
     plan.study_date = payload.study_date
     db.commit()
     db.refresh(plan)
-    return serialize_plan(plan)
+
+    memo_entry = (
+        db.query(models.StudyPlanMemo)
+        .filter(
+            models.StudyPlanMemo.profile_id == current_user.id,
+            models.StudyPlanMemo.study_date == plan.study_date,
+        )
+        .one_or_none()
+    )
+    memo_text = memo_entry.memo if memo_entry else None
+    return serialize_plan(plan, memo_text)
 
 
 @router.delete("/{plan_id}", response_model=dict)

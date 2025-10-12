@@ -117,6 +117,40 @@
               아직 학습 계획이 없습니다. 아래에서 그룹을 선택해 추가해 보세요.
             </p>
 
+            <section id="plan-memo-section" class="plan-memo-section">
+              <div class="plan-memo-header">
+                <div class="plan-memo-heading">
+                  <h3>학습 메모</h3>
+                  <p class="panel-subtitle">
+                    선택한 날짜에 대한 메모를 작성하면 오늘의 학습 화면 상단에 표시됩니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  id="plan-memo-clear"
+                  class="link-button secondary"
+                  disabled
+                >
+                  메모 비우기
+                </button>
+              </div>
+              <form id="plan-memo-form" class="form plan-memo-form" autocomplete="off">
+                <label for="plan-memo-text" class="plan-memo-label">메모 내용</label>
+                <textarea
+                  id="plan-memo-text"
+                  rows="5"
+                  placeholder="선택한 날짜에 대한 메모를 입력하세요."
+                  disabled
+                ></textarea>
+                <div class="plan-memo-actions">
+                  <span id="plan-memo-feedback" class="plan-memo-feedback" aria-live="polite"></span>
+                  <button type="submit" id="plan-memo-save" class="primary" disabled>
+                    메모 저장
+                  </button>
+                </div>
+              </form>
+            </section>
+
             <form id="plan-form" class="form plan-form" autocomplete="off">
               <h3>그룹 추가</h3>
               <div class="grid plan-form-grid">

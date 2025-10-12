@@ -4,6 +4,8 @@ const state = {
   plans: [],
   planMap: new Map(),
   timezoneOffset: new Date().getTimezoneOffset(),
+  memo: '',
+  memoLoaded: false,
 };
 
 const userGreeting = document.querySelector('#user-greeting');
@@ -20,6 +22,10 @@ const historyTitle = document.querySelector('#today-history-title');
 const historyList = document.querySelector('#today-history-list');
 const historyEmpty = document.querySelector('#today-history-empty');
 const historyCloseButtons = document.querySelectorAll('[data-history-close]');
+const memoContainer = document.querySelector('#today-memo');
+const memoContent = document.querySelector('#today-memo-content');
+
+renderTodayMemo();
 
 function formatISODate(date) {
   const year = date.getFullYear();
@@ -33,6 +39,12 @@ function formatKoreanDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}년 ${month}월 ${day}일`;
+}
+
+function normalizeMemo(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value !== 'string') return String(value);
+  return value.replace(/\r\n/g, '\n');
 }
 
 function parseISODateString(value) {
@@ -178,6 +190,18 @@ function openHistoryModal(plan, planKey) {
   if (dialog && typeof dialog.focus === 'function') {
     dialog.focus();
   }
+}
+
+function renderTodayMemo() {
+  if (!memoContainer || !memoContent) return;
+  const memoText = normalizeMemo(state.memo);
+  if (!memoText) {
+    memoContainer.hidden = true;
+    memoContent.textContent = '';
+    return;
+  }
+  memoContainer.hidden = false;
+  memoContent.textContent = memoText;
 }
 
 async function openHistoryModalByKey(planKey, fallbackPlan = null) {
@@ -413,6 +437,13 @@ async function fetchTodayPlans() {
         exam_sessions: Array.isArray(plan.exam_sessions) ? plan.exam_sessions : [],
         is_completed: Boolean(plan.is_completed),
       }));
+    if (!state.memoLoaded) {
+      const memoFromPlans = state.plans
+        .map((plan) => normalizeMemo(plan.day_memo))
+        .find((value) => Boolean(value));
+      state.memo = memoFromPlans || '';
+      renderTodayMemo();
+    }
     updatePlanMap(state.plans);
     if (historyModal && !historyModal.hasAttribute('hidden')) {
       const activeKey = historyModal.dataset.planKey;
@@ -424,11 +455,28 @@ async function fetchTodayPlans() {
       }
     }
     renderPlans();
+    renderTodayMemo();
     return state.plans;
   } catch (error) {
     console.error(error);
     showToast(error.message, 'error');
     return [];
+  }
+}
+
+async function fetchTodayMemo() {
+  const iso = state.todayIso;
+  try {
+    const data = await api(`/study-plans/memo/${iso}`);
+    const memoText = data && Object.prototype.hasOwnProperty.call(data, 'memo') ? data.memo : null;
+    state.memo = normalizeMemo(memoText);
+    state.memoLoaded = true;
+    renderTodayMemo();
+    return state.memo;
+  } catch (error) {
+    console.error(error);
+    showToast(error.message, 'error');
+    return '';
   }
 }
 
@@ -494,8 +542,12 @@ function scheduleMidnightRefresh() {
     state.today = new Date();
     state.timezoneOffset = state.today.getTimezoneOffset();
     state.todayIso = formatISODate(state.today);
+    state.memoLoaded = false;
+    state.memo = '';
+    renderTodayMemo();
     try {
       await fetchTodayPlans();
+      await fetchTodayMemo();
     } catch (error) {
       console.error(error);
     }
@@ -508,7 +560,9 @@ async function init() {
   state.timezoneOffset = state.today.getTimezoneOffset();
   try {
     await Session.ensureAuthenticated();
+    state.memoLoaded = false;
     await fetchTodayPlans();
+    await fetchTodayMemo();
     scheduleMidnightRefresh();
   } catch (error) {
     if (error.message !== 'unauthenticated') {

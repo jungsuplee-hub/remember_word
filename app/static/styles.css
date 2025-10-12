@@ -2662,6 +2662,36 @@ body.modal-open {
   justify-content: flex-end;
 }
 
+.today-memo {
+  margin-top: 1rem;
+  padding: 1.15rem 1.3rem;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(59, 130, 246, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.today-memo[hidden] {
+  display: none;
+}
+
+.today-memo-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.today-memo-content {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #0f172a;
+  white-space: pre-wrap;
+}
+
 .today-empty {
   display: flex;
   flex-direction: column;
@@ -2980,6 +3010,85 @@ body.modal-open {
   gap: 0.85rem;
 }
 
+.plan-memo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.plan-memo-section.is-disabled {
+  opacity: 0.65;
+}
+
+.plan-memo-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.plan-memo-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.plan-memo-heading h3 {
+  margin: 0;
+}
+
+.plan-memo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.plan-memo-label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+#plan-memo-text {
+  resize: vertical;
+  min-height: 140px;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+#plan-memo-text:focus {
+  outline: 3px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 2px;
+}
+
+#plan-memo-text:disabled {
+  background: rgba(241, 245, 249, 0.8);
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.plan-memo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.plan-memo-feedback {
+  font-size: 0.9rem;
+  color: rgba(15, 23, 42, 0.68);
+}
+
 .plan-detail-item {
   display: flex;
   align-items: center;
@@ -3246,6 +3355,21 @@ body.plan-modal-open {
 
   .plan-modal-close {
     order: -1;
+  }
+
+  .plan-memo-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .plan-memo-feedback {
+    width: 100%;
+  }
+
+  #plan-memo-save,
+  #plan-memo-clear {
+    width: 100%;
+    text-align: center;
   }
 }
 
