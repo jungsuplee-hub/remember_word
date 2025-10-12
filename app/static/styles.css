@@ -355,6 +355,9 @@ main.import-layout {
   padding: 0.25rem;
   border-radius: 999px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .import-image-modal-close:hover,
@@ -927,6 +930,9 @@ body.today-history-modal-open {
   padding: 0.25rem;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .today-history-close:hover,
@@ -1084,6 +1090,10 @@ body.today-history-modal-open {
   font-size: 1.4rem;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .guide-modal-close:hover,
@@ -3062,6 +3072,41 @@ body.modal-open {
   gap: 0.75rem;
 }
 
+.plan-memo-clear-button {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(226, 232, 240, 0.55);
+  color: #1f2937;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.plan-memo-clear-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.plan-memo-clear-button:not(:disabled):hover,
+.plan-memo-clear-button:not(:disabled):focus-visible {
+  background: rgba(203, 213, 225, 0.85);
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.15);
+}
+
+.plan-memo-clear-button:focus-visible {
+  outline: 3px solid rgba(191, 219, 254, 0.85);
+  outline-offset: 2px;
+}
+
 .plan-memo-heading {
   display: flex;
   flex-direction: column;
@@ -3245,8 +3290,9 @@ body.plan-modal-open {
   line-height: 1;
   cursor: pointer;
   color: #0f172a;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
