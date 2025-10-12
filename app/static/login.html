@@ -8,84 +8,110 @@
     <link rel="icon" type="image/png" href="/images/remember_word_log.png" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
-  <body data-public="true" class="auth-page">
-    <main class="auth-container">
-      <section class="auth-card">
-        <div class="auth-card-header">
-          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="auth-logo" />
-          <h1>Remember Word 로그인</h1>
-        </div>
-        <form id="login-form" class="auth-form">
-          <label>
-            아이디
-            <input type="text" name="username" autocomplete="username" required />
-          </label>
-          <label>
-            비밀번호
-            <input type="password" name="password" autocomplete="current-password" required />
-          </label>
-          <button type="submit" class="primary">로그인</button>
-        </form>
-        <p id="login-feedback" class="auth-feedback" role="alert"></p>
-        <div class="social-login" aria-label="간편 로그인(준비중입니다.)">
-          <p class="social-title">간편 로그인(준비중입니다.)</p>
-          <div class="social-buttons">
-            <button type="button" class="social-button google" data-social-login="google">
-              <span aria-hidden="true">🟦</span>
-              Google 계정으로 계속하기
-            </button>
-            <button type="button" class="social-button kakao" data-social-login="kakao">
-              <span aria-hidden="true">🟨</span>
-              Kakao 계정으로 계속하기
-            </button>
-            <button type="button" class="social-button naver" data-social-login="naver">
-              <span aria-hidden="true">🟩</span>
-              Naver 계정으로 계속하기
-            </button>
+  <body data-public="true" class="auth-page auth-page--with-header">
+    <header>
+      <div class="header-content">
+        <a href="/static/index.html" class="header-logo-link" aria-label="메인으로 이동">
+          <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="header-logo" />
+        </a>
+        <div class="header-main">
+          <div class="header-top">
+            <h1>Remember Word 로그인</h1>
+            <div class="user-meta">
+              <a href="/static/register.html" class="link-button secondary">회원가입</a>
+            </div>
           </div>
-          <p class="social-hint">
-            각 버튼을 누르면 제공업체 로그인 페이지로 이동합니다.
+          <p class="header-description">
+            Remember Word에 다시 오신 것을 환영합니다. 계정으로 로그인해 학습을 이어가세요.
           </p>
+          <div class="header-links">
+            <a href="/static/index.html" class="link-button">단어 관리</a>
+            <a href="/static/memorize.html" class="link-button">단어 암기</a>
+            <a href="/static/register.html" class="link-button secondary">회원가입</a>
+          </div>
         </div>
-        <p class="auth-hint" id="forgot-password-hint">
-          비밀번호를 잊으셨나요?
-          <button type="button" class="auth-link auth-link-button" id="forgot-password-trigger">
-            비밀번호 찾기
-          </button>
-        </p>
-        <p class="auth-hint">
-          아직 계정이 없으신가요?
-          <a href="/static/register.html" class="auth-link">회원가입</a>
-        </p>
-      </section>
+      </div>
+    </header>
 
-      <section class="auth-card hidden" data-reset-request-section>
-        <h2>비밀번호를 잊으셨나요?</h2>
-        <form id="reset-request-form" class="auth-form">
-          <label>
-            가입 이메일
-            <input type="email" name="email" autocomplete="email" required />
-          </label>
-          <button type="submit" class="secondary">재설정 링크 보내기</button>
-        </form>
-        <p id="reset-request-feedback" class="auth-feedback" role="status"></p>
-      </section>
+    <main class="auth-main">
+      <div class="auth-container">
+        <section class="auth-card">
+          <div class="auth-card-header">
+            <img src="/images/remember_word_log.png" alt="Remember Word 로고" class="auth-logo" />
+            <h2>계정 로그인</h2>
+          </div>
+          <form id="login-form" class="auth-form">
+            <label>
+              아이디
+              <input type="text" name="username" autocomplete="username" required />
+            </label>
+            <label>
+              비밀번호
+              <input type="password" name="password" autocomplete="current-password" required />
+            </label>
+            <button type="submit" class="primary">로그인</button>
+          </form>
+          <p id="login-feedback" class="auth-feedback" role="alert"></p>
+          <div class="social-login" aria-label="간편 로그인(준비중입니다.)">
+            <p class="social-title">간편 로그인(준비중입니다.)</p>
+            <div class="social-buttons">
+              <button type="button" class="social-button google" data-social-login="google">
+                <span aria-hidden="true">🟦</span>
+                Google 계정으로 계속하기
+              </button>
+              <button type="button" class="social-button kakao" data-social-login="kakao">
+                <span aria-hidden="true">🟨</span>
+                Kakao 계정으로 계속하기
+              </button>
+              <button type="button" class="social-button naver" data-social-login="naver">
+                <span aria-hidden="true">🟩</span>
+                Naver 계정으로 계속하기
+              </button>
+            </div>
+            <p class="social-hint">
+              각 버튼을 누르면 제공업체 로그인 페이지로 이동합니다.
+            </p>
+          </div>
+          <p class="auth-hint" id="forgot-password-hint">
+            비밀번호를 잊으셨나요?
+            <button type="button" class="auth-link auth-link-button" id="forgot-password-trigger">
+              비밀번호 찾기
+            </button>
+          </p>
+          <p class="auth-hint">
+            아직 계정이 없으신가요?
+            <a href="/static/register.html" class="auth-link">회원가입</a>
+          </p>
+        </section>
 
-      <section class="auth-card hidden" data-reset-confirm-section>
-        <h2>토큰으로 비밀번호 재설정</h2>
-        <form id="reset-confirm-form" class="auth-form">
-          <label>
-            이메일로 받은 토큰
-            <input type="text" name="token" required />
-          </label>
-          <label>
-            새 비밀번호
-            <input type="password" name="new_password" autocomplete="new-password" minlength="6" required />
-          </label>
-          <button type="submit" class="secondary">비밀번호 재설정</button>
-        </form>
-        <p id="reset-confirm-feedback" class="auth-feedback" role="status"></p>
-      </section>
+        <section class="auth-card hidden" data-reset-request-section>
+          <h2>비밀번호를 잊으셨나요?</h2>
+          <form id="reset-request-form" class="auth-form">
+            <label>
+              가입 이메일
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+            <button type="submit" class="secondary">재설정 링크 보내기</button>
+          </form>
+          <p id="reset-request-feedback" class="auth-feedback" role="status"></p>
+        </section>
+
+        <section class="auth-card hidden" data-reset-confirm-section>
+          <h2>토큰으로 비밀번호 재설정</h2>
+          <form id="reset-confirm-form" class="auth-form">
+            <label>
+              이메일로 받은 토큰
+              <input type="text" name="token" required />
+            </label>
+            <label>
+              새 비밀번호
+              <input type="password" name="new_password" autocomplete="new-password" minlength="6" required />
+            </label>
+            <button type="submit" class="secondary">비밀번호 재설정</button>
+          </form>
+          <p id="reset-confirm-feedback" class="auth-feedback" role="status"></p>
+        </section>
+      </div>
     </main>
 
     <div id="toast" role="status" aria-live="polite"></div>
