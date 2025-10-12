@@ -15,6 +15,7 @@ const state = {
   activeFolderId: null,
   draggingPlan: null,
   isPlanModalOpen: false,
+  timezoneOffset: new Date().getTimezoneOffset(),
 };
 
 const touchDrag = {
@@ -1045,10 +1046,12 @@ async function loadPlansForCurrentRange(options = {}) {
   const rangeStart = addDays(monthStart, -monthStart.getDay());
   const rangeEnd = addDays(monthEnd, 6 - monthEnd.getDay());
   try {
+    state.timezoneOffset = new Date().getTimezoneOffset();
     const params = new URLSearchParams({
       start: formatISODate(rangeStart),
       end: formatISODate(rangeEnd),
     });
+    params.set('tz_offset', String(state.timezoneOffset));
     const data = await api(`/study-plans?${params.toString()}`);
     const plans = Array.isArray(data) ? data : [];
     state.plansByDate.clear();
