@@ -2662,8 +2662,20 @@ body.modal-open {
   justify-content: flex-end;
 }
 
-.today-memo {
+.today-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
   margin-top: 1rem;
+}
+
+.today-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.today-memo {
   padding: 1.15rem 1.3rem;
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.12);
@@ -2696,11 +2708,29 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 0;
   padding: 1.35rem 1.5rem;
   border-radius: 16px;
   border: 1px dashed rgba(15, 23, 42, 0.15);
   background: rgba(15, 23, 42, 0.03);
+}
+
+@media (min-width: 960px) {
+  .today-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .today-main {
+    gap: 1.25rem;
+  }
+
+  .today-memo {
+    position: sticky;
+    top: 96px;
+  }
 }
 
 .today-empty .link-button {
