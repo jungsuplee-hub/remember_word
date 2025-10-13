@@ -115,11 +115,6 @@ async def populate_hanja_meanings(
         if not term_text:
             continue
 
-        if not contains_hanja(term_text):
-            continue
-
-        processed += 1
-
         if meaning_cell is None:
             meaning_cell = worksheet.cell(row=term_cell.row, column=2)
 
@@ -135,10 +130,13 @@ async def populate_hanja_meanings(
 
         translated = lookup_meaning(term_text)
         if translated:
+            processed += 1
             meaning_cell.value = translated
             filled += 1
         else:
-            untranslated += 1
+            if contains_hanja(term_text):
+                processed += 1
+                untranslated += 1
 
     output = BytesIO()
     workbook.save(output)
