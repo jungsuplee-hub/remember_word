@@ -4,6 +4,10 @@ const fileInput = document.querySelector('#hanja-meaning-file');
 const resetButton = document.querySelector('#hanja-meaning-reset');
 const feedback = document.querySelector('#hanja-meaning-feedback');
 const toast = document.querySelector('#toast');
+const userGreeting = document.querySelector('#user-greeting');
+const adminLink = document.querySelector('#admin-link');
+const accountLink = document.querySelector('#account-link');
+const logoutButton = document.querySelector('#logout-button');
 const submitButton = form ? form.querySelector('button[type="submit"]') : null;
 const POLL_INTERVAL = 1200;
 
@@ -211,6 +215,7 @@ async function ensureAdminAccess() {
   if (!sessionManager) return;
   try {
     const user = await sessionManager.ensureAuthenticated();
+    updateUserMenu(user);
     if (!sessionManager.isAdmin(user)) {
       if (form) {
         form.classList.add('disabled');
@@ -230,6 +235,32 @@ async function ensureAdminAccess() {
   } catch (error) {
     console.error(error);
     setFeedback('세션 정보를 확인할 수 없습니다. 다시 시도하세요.', 'error');
+  }
+}
+
+function updateUserMenu(user) {
+  if (!user) return;
+  const isAdmin = sessionManager?.isAdmin
+    ? sessionManager.isAdmin(user)
+    : Boolean(user?.is_admin);
+  if (userGreeting) {
+    userGreeting.textContent = `${user.name}님`;
+  }
+  if (adminLink) {
+    adminLink.hidden = !isAdmin;
+    adminLink.classList.toggle('hidden', !isAdmin);
+    if (isAdmin) {
+      adminLink.removeAttribute('hidden');
+      adminLink.setAttribute('aria-hidden', 'false');
+    } else {
+      adminLink.setAttribute('aria-hidden', 'true');
+    }
+  }
+  if (accountLink) {
+    accountLink.hidden = false;
+    accountLink.classList.remove('hidden');
+    accountLink.removeAttribute('hidden');
+    accountLink.setAttribute('aria-hidden', 'false');
   }
 }
 
@@ -300,6 +331,17 @@ if (form) {
 
 if (resetButton) {
   resetButton.addEventListener('click', resetForm);
+}
+
+if (sessionManager) {
+  sessionManager.subscribe(updateUserMenu);
+}
+
+if (logoutButton && sessionManager) {
+  logoutButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    sessionManager.logout();
+  });
 }
 
 ensureAdminAccess();
