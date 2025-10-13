@@ -226,6 +226,29 @@ class QuizQuestionOut(BaseModel):
         from_attributes = True
 
 
+class HanjaMeaningJobCreated(BaseModel):
+    task_id: str
+    status_url: str
+    download_url: str
+
+
+class HanjaMeaningJobStatus(BaseModel):
+    task_id: str
+    status: Literal["pending", "processing", "completed", "failed"]
+    total: int
+    processed: int
+    filled: int
+    existing: int
+    missing: int
+    message: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime]
+    expires_at: Optional[datetime]
+    download_ready: bool
+    download_name: Optional[str]
+
+
 class StudyPlanSet(BaseModel):
     group_ids: List[int] = Field(default_factory=list, description="선택한 그룹 ID 목록")
 
