@@ -3,6 +3,7 @@ const form = document.querySelector('#hanja-meaning-form');
 const fileInput = document.querySelector('#hanja-meaning-file');
 const resetButton = document.querySelector('#hanja-meaning-reset');
 const feedback = document.querySelector('#hanja-meaning-feedback');
+const downloadButton = document.querySelector('#hanja-meaning-download');
 const toast = document.querySelector('#toast');
 const userGreeting = document.querySelector('#user-greeting');
 const adminLink = document.querySelector('#admin-link');
@@ -13,6 +14,7 @@ const POLL_INTERVAL = 1200;
 
 let pollTimeoutId = null;
 let currentTask = null;
+let lastDownloadUrl = null;
 
 function showToast(message, type = 'info') {
   if (!toast) return;
@@ -59,6 +61,25 @@ function resetForm() {
   setFeedback('', 'info');
   stopPolling();
   currentTask = null;
+  updateDownloadButton(null);
+}
+
+function updateDownloadButton(url) {
+  if (!downloadButton) return;
+  lastDownloadUrl = url || null;
+  if (url) {
+    downloadButton.href = url;
+    downloadButton.hidden = false;
+    downloadButton.classList.remove('hidden');
+    downloadButton.setAttribute('aria-hidden', 'false');
+    downloadButton.setAttribute('download', '');
+  } else {
+    downloadButton.removeAttribute('href');
+    downloadButton.removeAttribute('download');
+    downloadButton.hidden = true;
+    downloadButton.classList.add('hidden');
+    downloadButton.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function downloadBlob(blob, filename) {
@@ -137,15 +158,29 @@ function formatProgressMessage(status) {
 }
 
 async function downloadResult(downloadUrl) {
-  const response = await fetch(downloadUrl, { cache: 'no-store' });
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || '파일 다운로드에 실패했습니다.');
+  if (!downloadUrl) {
+    throw new Error('다운로드할 파일이 준비되지 않았습니다.');
   }
 
-  const blob = await response.blob();
-  const filename = parseFilename(response.headers.get('Content-Disposition'));
-  downloadBlob(blob, filename);
+  try {
+    const response = await fetch(downloadUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '파일 다운로드에 실패했습니다.');
+    }
+
+    const blob = await response.blob();
+    const filename = parseFilename(response.headers.get('Content-Disposition'));
+    downloadBlob(blob, filename);
+    return 'fetched';
+  } catch (error) {
+    console.debug('Direct download failed, attempting fallback navigation.', error);
+    const popup = window.open(downloadUrl, '_blank');
+    if (popup) {
+      return 'opened';
+    }
+    throw error;
+  }
 }
 
 function summarizeCompletedStatus(status) {
@@ -182,14 +217,33 @@ async function pollTaskStatus() {
 
     if (status.status === 'completed') {
       stopPolling();
+      const downloadUrl = currentTask?.downloadUrl || lastDownloadUrl;
       setFeedback('파일 다운로드를 준비하는 중입니다...', 'info');
       try {
-        await downloadResult(currentTask.downloadUrl);
+        let downloadMode = null;
+        if (downloadUrl) {
+          downloadMode = await downloadResult(downloadUrl);
+        }
         const summary = summarizeCompletedStatus(status);
-        setFeedback(summary, 'success');
-        showToast('엑셀 파일을 다운로드했습니다.', 'success');
+        let hint = '';
+        if (downloadUrl) {
+          hint =
+            downloadMode === 'opened'
+              ? ' 새 탭이 열리지 않았다면 아래 다운로드 버튼을 눌러 다시 받아주세요.'
+              : ' 자동 다운로드가 시작되지 않았다면 아래 다운로드 버튼을 눌러 다시 받아주세요.';
+        }
+        updateDownloadButton(downloadUrl);
+        setFeedback(`${summary}${hint}`, 'success');
+        if (downloadMode === 'opened') {
+          showToast('새 탭에서 다운로드를 시도했습니다.', 'info');
+        } else if (downloadMode === 'fetched') {
+          showToast('엑셀 파일을 다운로드했습니다.', 'success');
+        } else {
+          showToast('처리 결과를 확인하세요.', 'success');
+        }
       } catch (error) {
         console.error(error);
+        updateDownloadButton(downloadUrl);
         setFeedback(error.message || '파일 다운로드에 실패했습니다.', 'error');
         showToast('파일 다운로드 중 오류가 발생했습니다.', 'error');
       } finally {
@@ -282,6 +336,8 @@ async function handleSubmit(event) {
   stopPolling();
   currentTask = null;
 
+  updateDownloadButton(null);
+
   try {
     const response = await fetch('/admin/utilities/hanja-meanings', {
       method: 'POST',
@@ -314,6 +370,7 @@ async function handleSubmit(event) {
       statusUrl: payload.status_url,
       downloadUrl: payload.download_url,
     };
+    updateDownloadButton(null);
 
     setFeedback('업로드한 파일을 확인하고 있습니다...', 'info');
     pollTaskStatus();
@@ -331,6 +388,33 @@ if (form) {
 
 if (resetButton) {
   resetButton.addEventListener('click', resetForm);
+}
+
+if (downloadButton) {
+  downloadButton.addEventListener('click', async (event) => {
+    if (!lastDownloadUrl) {
+      event.preventDefault();
+      showToast('다운로드할 파일이 없습니다.', 'error');
+      return;
+    }
+
+    event.preventDefault();
+    downloadButton.setAttribute('aria-busy', 'true');
+    try {
+      const mode = await downloadResult(lastDownloadUrl);
+      if (mode === 'opened') {
+        showToast('새 탭에서 다운로드를 시도했습니다.', 'info');
+      } else {
+        showToast('엑셀 파일을 다운로드했습니다.', 'success');
+      }
+    } catch (error) {
+      console.error(error);
+      setFeedback(error.message || '파일 다운로드에 실패했습니다.', 'error');
+      showToast('파일 다운로드 중 오류가 발생했습니다.', 'error');
+    } finally {
+      downloadButton.removeAttribute('aria-busy');
+    }
+  });
 }
 
 if (sessionManager) {
