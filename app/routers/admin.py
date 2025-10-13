@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
@@ -150,12 +151,23 @@ async def populate_hanja_meanings(
     if not safe_base:
         safe_base = "hanja"
     download_name = f"{safe_base}_뜻자동입력.xlsx"
+    ascii_fallback = "".join(
+        ch if ch.isascii() and (ch.isalnum() or ch in {"_", "-", " ", "."}) else "_"
+        for ch in safe_base
+    ).strip("_ ")
+    if not ascii_fallback:
+        ascii_fallback = "hanja"
+    fallback_name = f"{ascii_fallback}_meaning.xlsx"
+
+    quoted_name = quote(download_name)
 
     response = StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-    response.headers["Content-Disposition"] = f'attachment; filename="{download_name}"'
+    response.headers[
+        "Content-Disposition"
+    ] = f"attachment; filename=\"{fallback_name}\"; filename*=UTF-8''{quoted_name}"
     response.headers["X-Meaning-Processed"] = str(processed)
     response.headers["X-Meaning-Filled"] = str(filled)
     response.headers["X-Meaning-Existing"] = str(already_present)
