@@ -12,6 +12,7 @@ const state = {
     progress: null,
     awaitingResult: false,
     lastResult: null,
+    pendingSubmissions: 0,
   },
 };
 
@@ -251,6 +252,7 @@ function resetQuizState() {
   state.quiz.progress = null;
   state.quiz.awaitingResult = false;
   state.quiz.lastResult = null;
+  state.quiz.pendingSubmissions = 0;
   resetPreview();
   if (questionContainer) {
     questionContainer.classList.add('hidden');
@@ -412,6 +414,7 @@ async function startExam(payload) {
       remaining: result.total,
       incorrect_question_ids: [],
     };
+    state.quiz.pendingSubmissions = 0;
     state.quiz.awaitingResult = false;
     showQuestion();
     showToast('시험을 시작합니다.');
@@ -421,44 +424,111 @@ async function startExam(payload) {
   }
 }
 
-async function submitResult(isCorrect) {
+function cloneProgress(progress) {
+  if (!progress) return null;
+  return {
+    session_id: progress.session_id,
+    total: progress.total,
+    answered: progress.answered,
+    correct: progress.correct,
+    remaining: progress.remaining,
+    incorrect_question_ids: Array.isArray(progress.incorrect_question_ids)
+      ? [...progress.incorrect_question_ids]
+      : [],
+  };
+}
+
+function applyOptimisticProgress(questionId, isCorrect) {
+  const current = cloneProgress(state.quiz.progress) || {
+    session_id: state.quiz.sessionId,
+    total: state.quiz.questions.length,
+    answered: 0,
+    correct: 0,
+    remaining: state.quiz.questions.length,
+    incorrect_question_ids: [],
+  };
+  current.answered = Math.min(current.total, current.answered + 1);
+  if (isCorrect) {
+    current.correct = Math.min(current.total, current.correct + 1);
+    current.incorrect_question_ids = current.incorrect_question_ids.filter((id) => id !== questionId);
+  } else if (!current.incorrect_question_ids.includes(questionId)) {
+    current.incorrect_question_ids = [...current.incorrect_question_ids, questionId];
+  }
+  current.remaining = Math.max(0, current.total - current.answered);
+  return current;
+}
+
+function handleSubmissionError(previousProgress, originalIndex, wasLastQuestion, error) {
+  showToast(error.message, 'error');
+  if (previousProgress) {
+    state.quiz.progress = previousProgress;
+  }
+  if (wasLastQuestion) {
+    state.quiz.active = true;
+    state.quiz.completed = false;
+    state.quiz.lastResult = null;
+    if (summaryEl) summaryEl.classList.add('hidden');
+    hideResultModal();
+  }
+  state.quiz.index = originalIndex;
+  showQuestion();
+}
+
+function submitResult(isCorrect) {
   if (!state.quiz.active || state.quiz.awaitingResult) return;
   const question = state.quiz.questions[state.quiz.index];
   if (!question) return;
+
+  const originalIndex = state.quiz.index;
+  const wasLastQuestion = originalIndex >= state.quiz.questions.length - 1;
+  const previousProgress = cloneProgress(state.quiz.progress);
+
   state.quiz.awaitingResult = true;
   hideAnswerPreview();
   if (failBtn) failBtn.disabled = true;
   if (successBtn) successBtn.disabled = true;
   if (previewBtn) previewBtn.disabled = true;
-  try {
-    const progress = await api(`/quizzes/${state.quiz.sessionId}/answer`, {
-      method: 'POST',
-      body: JSON.stringify({
-        question_id: question.id,
-        answer: null,
-        is_correct: isCorrect,
-      }),
-    });
-    state.quiz.progress = progress;
-    updateProgressUI();
-    const nextIndex = state.quiz.index + 1;
-    if (nextIndex < state.quiz.questions.length) {
-      state.quiz.index = nextIndex;
-      setTimeout(() => {
-        state.quiz.awaitingResult = false;
-        showQuestion();
-      }, 350);
-    } else {
-      state.quiz.awaitingResult = false;
-      showSummary();
-    }
-  } catch (err) {
-    showToast(err.message, 'error');
-    if (failBtn) failBtn.disabled = false;
-    if (successBtn) successBtn.disabled = false;
-    if (previewBtn) previewBtn.disabled = false;
+
+  const optimisticProgress = applyOptimisticProgress(question.id, isCorrect);
+  state.quiz.progress = optimisticProgress;
+  updateProgressUI();
+
+  if (wasLastQuestion) {
+    showSummary();
     state.quiz.awaitingResult = false;
+  } else {
+    state.quiz.index = originalIndex + 1;
+    showQuestion();
   }
+
+  const payload = {
+    question_id: question.id,
+    answer: null,
+    is_correct: isCorrect,
+  };
+
+  state.quiz.pendingSubmissions += 1;
+  api(`/quizzes/${state.quiz.sessionId}/answer`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+    .then((progress) => {
+      state.quiz.progress = progress;
+      if (state.quiz.completed) {
+        updateSummaryFromProgress();
+      } else {
+        updateProgressUI();
+      }
+    })
+    .catch((err) => {
+      handleSubmissionError(previousProgress, originalIndex, wasLastQuestion, err);
+    })
+    .finally(() => {
+      state.quiz.pendingSubmissions = Math.max(0, state.quiz.pendingSubmissions - 1);
+      if (state.quiz.pendingSubmissions === 0) {
+        state.quiz.awaitingResult = false;
+      }
+    });
 }
 
 async function handleRetry() {
@@ -488,6 +558,7 @@ async function handleRetry() {
       remaining: result.total,
       incorrect_question_ids: [],
     };
+    state.quiz.pendingSubmissions = 0;
     showQuestion();
     showToast('틀린 문제를 다시 시작합니다.');
   } catch (err) {
