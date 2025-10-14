@@ -207,7 +207,7 @@ function speakTerm({ term, reading }) {
   const createUtteranceInstance = () => {
     const utterance = new SpeechSynthesisUtterance(speechText);
     utterance.lang = lang;
-    utterance.rate = 0.9;
+    utterance.rate = 0.45;
     if (voice) {
       utterance.voice = voice;
     }
