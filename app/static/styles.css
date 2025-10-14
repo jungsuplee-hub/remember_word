@@ -195,6 +195,10 @@ body[data-guide-page="manage"] .header-description {
   max-width: min(100%, 540px);
 }
 
+body[data-guide-page="memorize"] {
+  font-size: clamp(1rem, 0.98rem + 0.25vw, 1.12rem);
+}
+
 .hero-pill-group {
   display: inline-flex;
   flex-wrap: wrap;
@@ -1505,19 +1509,22 @@ main.memorize-layout .panel {
 .term-audio {
   border: none;
   background: transparent;
-  padding: 0.15rem;
+  padding: 0.35rem;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
   border-radius: 999px;
   color: #1d4ed8;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .term-audio svg {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 1.35rem;
+  height: 1.35rem;
   fill: currentColor;
 }
 

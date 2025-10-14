@@ -99,6 +99,7 @@ const speech = {
   voices: [],
   warningShown: false,
   missingVoiceWarnings: new Set(),
+  currentSessionId: 0,
 };
 
 function loadVoices() {
@@ -198,19 +199,42 @@ function speakTerm({ term, reading }) {
     }
   }
 
-  const utterance = new SpeechSynthesisUtterance(speechText);
-  utterance.lang = lang;
-  utterance.rate = 0.9;
-
   const voice = selectVoiceForLang(lang);
-  if (voice) {
-    utterance.voice = voice;
-  } else if (state.audioLanguage !== 'auto') {
+  if (!voice && state.audioLanguage !== 'auto') {
     notifyMissingVoice(lang);
   }
 
+  const createUtteranceInstance = () => {
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.lang = lang;
+    utterance.rate = 0.9;
+    if (voice) {
+      utterance.voice = voice;
+    }
+    return utterance;
+  };
+
+  speech.currentSessionId += 1;
+  const sessionId = speech.currentSessionId;
+
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+
+  const firstUtterance = createUtteranceInstance();
+
+  firstUtterance.addEventListener('end', () => {
+    if (sessionId !== speech.currentSessionId) {
+      return;
+    }
+    setTimeout(() => {
+      if (sessionId !== speech.currentSessionId) {
+        return;
+      }
+      const secondUtterance = createUtteranceInstance();
+      window.speechSynthesis.speak(secondUtterance);
+    }, 500);
+  });
+
+  window.speechSynthesis.speak(firstUtterance);
 }
 
 function createAudioButton(term, reading) {
