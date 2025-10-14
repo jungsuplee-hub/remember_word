@@ -14,6 +14,10 @@
   --radius-md: 16px;
   --shadow-soft: 0 24px 60px rgba(36, 56, 110, 0.18);
   --shadow-card: 0 18px 36px rgba(40, 54, 94, 0.14);
+  --layout-padding-top: clamp(1.1rem, 4vw, 1.75rem);
+  --layout-padding-bottom: clamp(1.5rem, 4.5vw, 2.5rem);
+  --layout-padding-x: clamp(0.85rem, 4vw, 1.5rem);
+  --layout-padding-x-wide: clamp(1rem, 4vw, 1.75rem);
 }
 
 *,
@@ -53,14 +57,10 @@ body::after {
 }
 
 header {
-  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.5rem, 5vw, 4rem) clamp(2rem, 5vw, 3.5rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 4vw, 2rem) clamp(1.25rem, 4vw, 2rem);
   color: #14213d;
   position: relative;
   overflow: hidden;
-}
-
-body[data-guide-page="exam-session"] header {
-  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 4vw, 2rem) clamp(1.25rem, 4vw, 2rem);
 }
 
 header::before {
@@ -86,23 +86,17 @@ header::after {
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  gap: clamp(1.5rem, 3vw, 2.5rem);
+  gap: clamp(1rem, 2.5vw, 1.75rem);
   flex-wrap: wrap;
   margin: 0 auto;
   width: min(100%, 1100px);
   background: rgba(15, 23, 42, 0.08);
   border-radius: var(--radius-lg);
-  padding: clamp(1.75rem, 4vw, 2.5rem);
+  padding: clamp(1.25rem, 3vw, 1.75rem);
   border: 1px solid rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(16px);
   box-shadow: var(--shadow-soft);
   position: relative;
-}
-
-body[data-guide-page="exam-session"] .header-content {
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-  gap: clamp(1rem, 2vw, 1.5rem);
-  backdrop-filter: blur(12px);
 }
 
 .header-content::after {
@@ -148,13 +142,9 @@ body[data-guide-page="exam-session"] .header-content {
 .header-main {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
+  gap: clamp(0.75rem, 2vw, 1.1rem);
   flex: 1;
   min-width: min(100%, 280px);
-}
-
-body[data-guide-page="exam-session"] .header-main {
-  gap: 0.75rem;
 }
 
 .header-top {
@@ -413,7 +403,8 @@ main.exam-layout {
   grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
   align-items: flex-start;
   gap: 1.5rem;
-  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1rem, 4vw, 1.5rem) clamp(2.25rem, 5vw, 3rem);
+  padding: var(--layout-padding-top) var(--layout-padding-x-wide)
+    calc(var(--layout-padding-bottom) + 0.35rem);
   max-width: 1180px;
   margin: 0 auto;
   width: min(100%, 1180px);
@@ -423,7 +414,8 @@ main.today-layout {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1rem, 4vw, 1.75rem) clamp(2.25rem, 5vw, 3rem);
+  padding: var(--layout-padding-top) var(--layout-padding-x-wide)
+    calc(var(--layout-padding-bottom) + 0.35rem);
   max-width: 960px;
   margin: 0 auto;
   width: min(100%, 960px);
@@ -433,7 +425,9 @@ main.study-plan-layout {
   display: flex;
   flex-direction: column;
   gap: clamp(1.5rem, 3vw, 2.25rem);
-  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1rem, 4vw, 2.25rem) clamp(2.75rem, 5vw, 3.5rem);
+  padding: calc(var(--layout-padding-top) + 0.15rem)
+    clamp(1rem, 4vw, 2rem)
+    calc(var(--layout-padding-bottom) + 0.9rem);
   max-width: 1280px;
   margin: 0 auto;
   width: min(100%, 1280px);
@@ -447,7 +441,8 @@ main.market-layout {
   display: grid;
   grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1fr) minmax(0, 1.15fr);
   gap: 1.5rem;
-  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1rem, 4vw, 1.75rem) clamp(2.25rem, 5vw, 3rem);
+  padding: var(--layout-padding-top) var(--layout-padding-x-wide)
+    calc(var(--layout-padding-bottom) + 0.35rem);
   max-width: 1200px;
   margin: 0 auto;
   width: min(100%, 1200px);
@@ -457,7 +452,8 @@ main.import-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 1.5rem;
-  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1rem, 4vw, 1.75rem) clamp(2.25rem, 5vw, 3rem);
+  padding: var(--layout-padding-top) var(--layout-padding-x-wide)
+    calc(var(--layout-padding-bottom) + 0.35rem);
   max-width: 1100px;
   margin: 0 auto;
   width: min(100%, 1100px);
@@ -797,14 +793,11 @@ main.import-layout {
 main.exam-session-layout {
   display: flex;
   justify-content: center;
-  padding: clamp(1.75rem, 5vw, 2.5rem) clamp(1rem, 6vw, 1.75rem) clamp(2rem, 6vw, 3rem);
+  padding: var(--layout-padding-top) var(--layout-padding-x-wide)
+    calc(var(--layout-padding-bottom) + 0.25rem);
   max-width: 880px;
   margin: 0 auto;
   width: min(100%, 880px);
-}
-
-body[data-guide-page="exam-session"] main.exam-session-layout {
-  padding: clamp(1.1rem, 4vw, 1.75rem) clamp(0.85rem, 4.5vw, 1.5rem) clamp(1.5rem, 4.5vw, 2.5rem);
 }
 
 main.exam-session-layout .panel {
@@ -1421,7 +1414,9 @@ body.today-history-modal-open {
 main.memorize-layout {
   display: flex;
   justify-content: center;
-  padding: 2.5rem 1.5rem 3rem;
+  padding: calc(var(--layout-padding-top) + 0.2rem)
+    var(--layout-padding-x-wide)
+    calc(var(--layout-padding-bottom) + 0.6rem);
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
@@ -2890,7 +2885,9 @@ body.modal-open {
 
   main.exam-layout {
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    padding: 2rem 1.25rem 2.5rem;
+    padding: calc(var(--layout-padding-top) + 0.2rem)
+      var(--layout-padding-x-wide)
+      calc(var(--layout-padding-bottom) + 0.45rem);
     max-width: 1080px;
   }
 
@@ -2927,7 +2924,8 @@ body.modal-open {
   main.exam-layout {
     grid-template-columns: 1fr;
     max-width: 760px;
-    padding: 1.75rem 1.1rem 2.25rem;
+    padding: var(--layout-padding-top) var(--layout-padding-x)
+      calc(var(--layout-padding-bottom) + 0.35rem);
   }
 
   .exam-history-list {
@@ -2956,7 +2954,8 @@ body.modal-open {
   }
 
   main.exam-layout {
-    padding: 2rem 1rem 2.5rem;
+    padding: var(--layout-padding-top) var(--layout-padding-x)
+      calc(var(--layout-padding-bottom) + 0.35rem);
     max-width: none;
   }
 
@@ -2969,7 +2968,8 @@ body.modal-open {
   }
 
   main.memorize-layout {
-    padding: 2rem 1rem 2.5rem;
+    padding: calc(var(--layout-padding-top) + 0.1rem) var(--layout-padding-x)
+      calc(var(--layout-padding-bottom) + 0.45rem);
   }
 
   main.memorize-layout .panel {
@@ -2979,7 +2979,8 @@ body.modal-open {
   main.import-layout {
     grid-template-columns: 1fr;
     max-width: none;
-    padding: 2rem 1rem 2.5rem;
+    padding: var(--layout-padding-top) var(--layout-padding-x)
+      calc(var(--layout-padding-bottom) + 0.35rem);
   }
 
   main.import-layout .panel {
@@ -3072,7 +3073,9 @@ body.modal-open {
   }
 
   main.exam-layout {
-    padding: 1.5rem 0.85rem 2rem;
+    padding: calc(var(--layout-padding-top) - 0.05rem)
+      var(--layout-padding-x)
+      calc(var(--layout-padding-bottom) + 0.2rem);
   }
 
   .exam-summary-score {
@@ -3810,7 +3813,9 @@ body.plan-modal-open {
 
 @media (max-width: 680px) {
   main.study-plan-layout {
-    padding: clamp(1.5rem, 5vw, 2rem) clamp(0.75rem, 5vw, 1.5rem) clamp(2.25rem, 6vw, 3rem);
+    padding: calc(var(--layout-padding-top) + 0.05rem)
+      clamp(0.75rem, 5vw, 1.5rem)
+      calc(var(--layout-padding-bottom) + 0.5rem);
   }
 
   .calendar-scroll {
