@@ -360,7 +360,8 @@ body:not([data-guide-page="exam-session"]) .header-links .link-button,
 body[data-guide-page="exam-session"] .header-links .link-button {
   width: auto;
   justify-content: center;
-  padding-block: 0.55rem;
+  padding-block: 0.4rem;
+  padding-inline: 0.85rem;
   font-size: clamp(0.85rem, 1.75vw, 0.95rem);
 }
 
@@ -526,6 +527,7 @@ header .link-button {
     justify-content: center;
     white-space: normal;
     line-height: 1.35;
+    padding-inline: 0.85rem;
   }
 }
 
@@ -544,7 +546,7 @@ header .link-button {
 
   body:not([data-guide-page="exam-session"]) .header-links .link-button,
   body[data-guide-page="exam-session"] .header-links .link-button {
-    padding-block: 0.38rem;
+    padding-block: 0.4rem;
     font-size: 0.82rem;
   }
 }
@@ -641,8 +643,8 @@ header .link-button {
   .header-menu .header-links .link-button {
     width: 100%;
     justify-content: center;
-    padding-block: 0.65rem;
-    padding-inline: 1.3rem;
+    padding-block: 0.4rem;
+    padding-inline: 0.85rem;
     font-size: 1rem;
   }
 
