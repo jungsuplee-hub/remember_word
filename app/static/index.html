@@ -20,7 +20,21 @@
         </a>
         <div class="header-main">
           <div class="header-top">
-            <h1>단어 관리</h1>
+            <div class="header-title-group">
+              <h1>단어 관리</h1>
+              <p class="header-description">폴더와 그룹을 만들고 단어를 추가해보세요.</p>
+            </div>
+            <button
+              type="button"
+              class="header-menu-toggle"
+              aria-expanded="false"
+              aria-controls="header-menu"
+            >
+              <span class="sr-only">메뉴 열기</span>
+              <span class="header-menu-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="header-menu" id="header-menu">
             <div class="user-meta">
               <span id="user-greeting" class="user-greeting"></span>
               <button id="logout-button" class="link-button danger">로그아웃</button>
@@ -31,33 +45,33 @@
                 나의 계정
               </a>
             </div>
+            <div class="header-links">
+              <a href="/static/today.html" class="link-button">오늘의 학습</a>
+              <a href="/static/study-plan.html" class="link-button">학습 계획</a>
+              <a
+                href="/static/index.html"
+                class="link-button secondary"
+                aria-current="page"
+              >
+                단어 관리
+              </a>
+              <a href="/static/memorize.html" class="link-button">단어 암기</a>
+              <a href="/static/exam.html" class="link-button">시험 보기</a>
+              <a href="/static/import.html" class="link-button">엑셀 업로드</a>
+              <a href="/static/market.html" class="link-button">단어 마켓</a>
+              <a
+                href="/static/admin.html"
+                id="admin-link"
+                class="link-button secondary hidden"
+                hidden
+                aria-hidden="true"
+                data-requires-admin
+              >
+                관리자
+              </a>
+            </div>
           </div>
-          <p class="header-description">폴더와 그룹을 만들고 단어를 추가해보세요.</p>
-          <div class="header-links">
-            <a href="/static/today.html" class="link-button">오늘의 학습</a>
-            <a href="/static/study-plan.html" class="link-button">학습 계획</a>
-            <a
-              href="/static/index.html"
-              class="link-button secondary"
-              aria-current="page"
-            >
-              단어 관리
-            </a>
-            <a href="/static/memorize.html" class="link-button">단어 암기</a>
-            <a href="/static/exam.html" class="link-button">시험 보기</a>
-            <a href="/static/import.html" class="link-button">엑셀 업로드</a>
-            <a href="/static/market.html" class="link-button">단어 마켓</a>
-            <a
-              href="/static/admin.html"
-              id="admin-link"
-              class="link-button secondary hidden"
-              hidden
-              aria-hidden="true"
-              data-requires-admin
-            >
-              관리자
-            </a>
-          </div>
+          <div class="header-menu-backdrop" data-mobile-menu-backdrop aria-hidden="true"></div>
         </div>
       </div>
     </header>
