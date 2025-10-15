@@ -738,7 +738,8 @@ async function fetchGroupsForFolder(folderId) {
   }
 }
 
-async function persistDay(dateIso, groupIds) {
+async function persistDay(dateIso, groupIds, options = {}) {
+  const { toastMessage = '학습 계획을 저장했습니다.', silent = false } = options;
   try {
     const payload = { group_ids: groupIds };
     const plans = await api(`/study-plans/${dateIso}`, {
@@ -755,9 +756,13 @@ async function persistDay(dateIso, groupIds) {
       renderDetail();
       ensureMemoLoaded(dateIso);
     }
-    showToast('학습 계획을 저장했습니다.', 'success');
+    if (!silent && toastMessage) {
+      showToast(toastMessage, 'success');
+    }
+    return normalized;
   } catch (error) {
     showToast(error.message, 'error');
+    return null;
   }
 }
 
@@ -790,45 +795,58 @@ async function clearSelectedDay() {
 }
 
 async function movePlan(planId, targetDate) {
-  try {
-    const updated = await api(`/study-plans/${planId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ study_date: targetDate }),
-    });
-    const updatedPlan = updated || null;
-    if (!updatedPlan) {
-      await loadPlansForCurrentRange({ keepSelection: true });
-      return;
-    }
-
-    for (const [dateIso, plans] of state.plansByDate.entries()) {
-      const index = plans.findIndex((plan) => plan.id === planId);
-      if (index !== -1) {
-        plans.splice(index, 1);
-        if (!plans.length) {
-          state.plansByDate.delete(dateIso);
-        }
-        break;
-      }
-    }
-
-    const list = state.plansByDate.get(updatedPlan.study_date) || [];
-    list.push(updatedPlan);
-    setPlansForDate(updatedPlan.study_date, list);
-    if (Object.prototype.hasOwnProperty.call(updatedPlan, 'day_memo')) {
-      setSavedMemo(updatedPlan.study_date, updatedPlan.day_memo, { markLoaded: true });
-    }
-    renderCalendar();
-    renderDetail();
-    if (state.selectedDate === updatedPlan.study_date) {
-      ensureMemoLoaded(updatedPlan.study_date);
-    }
-    showToast('학습 계획을 이동했습니다.', 'success');
-  } catch (error) {
-    showToast(error.message, 'error');
-  } finally {
+  const dragging = state.draggingPlan;
+  if (!dragging) return;
+  const sourceDate = dragging.sourceDate;
+  if (!sourceDate || sourceDate === targetDate) {
     state.draggingPlan = null;
+    return;
   }
+
+  const sourcePlans = getPlansForDate(sourceDate);
+  if (!sourcePlans.length) {
+    state.draggingPlan = null;
+    showToast('이동할 학습이 없습니다.', 'info');
+    return;
+  }
+
+  if (!sourcePlans.some((plan) => plan.id === planId)) {
+    state.draggingPlan = null;
+    await loadPlansForCurrentRange({ keepSelection: true });
+    showToast('이동할 학습을 찾을 수 없습니다.', 'error');
+    return;
+  }
+
+  const targetPlans = getPlansForDate(targetDate);
+  const seenGroupIds = new Set();
+  const mergedGroupIds = [];
+
+  for (const plan of targetPlans) {
+    if (seenGroupIds.has(plan.group_id)) continue;
+    seenGroupIds.add(plan.group_id);
+    mergedGroupIds.push(plan.group_id);
+  }
+
+  for (const plan of sourcePlans) {
+    if (seenGroupIds.has(plan.group_id)) continue;
+    seenGroupIds.add(plan.group_id);
+    mergedGroupIds.push(plan.group_id);
+  }
+
+  const targetResult = await persistDay(targetDate, mergedGroupIds, { silent: true });
+  if (targetResult === null) {
+    state.draggingPlan = null;
+    return;
+  }
+
+  const sourceResult = await persistDay(sourceDate, [], { silent: true });
+  if (sourceResult === null) {
+    state.draggingPlan = null;
+    return;
+  }
+
+  showToast('모든 학습 계획을 이동했습니다.', 'success');
+  state.draggingPlan = null;
 }
 
 function clearDropTargets() {
