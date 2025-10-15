@@ -360,9 +360,10 @@ body:not([data-guide-page="exam-session"]) .header-links .link-button,
 body[data-guide-page="exam-session"] .header-links .link-button {
   width: auto;
   justify-content: center;
-  padding-block: 0.4rem;
-  padding-inline: 0.85rem;
-  font-size: clamp(0.85rem, 1.75vw, 0.95rem);
+  padding-block: 0.65rem;
+  padding-inline: clamp(1.15rem, 2.6vw, 1.5rem);
+  font-size: clamp(0.95rem, 1.9vw, 1.08rem);
+  min-height: 3.25rem;
 }
 
 body:not([data-guide-page="exam-session"]) .header-links .link-button.secondary,
@@ -546,8 +547,9 @@ header .link-button {
 
   body:not([data-guide-page="exam-session"]) .header-links .link-button,
   body[data-guide-page="exam-session"] .header-links .link-button {
-    padding-block: 0.4rem;
-    font-size: 0.82rem;
+    padding-block: 0.65rem;
+    font-size: clamp(0.95rem, 3.6vw, 1.08rem);
+    min-height: 3.25rem;
   }
 }
 
@@ -559,7 +561,8 @@ header .link-button {
 
   body:not([data-guide-page="exam-session"]) .header-links .link-button,
   body[data-guide-page="exam-session"] .header-links .link-button {
-    font-size: 0.8rem;
+    font-size: clamp(0.92rem, 4.8vw, 1.02rem);
+    min-height: 3.25rem;
   }
 }
 
@@ -628,9 +631,10 @@ header .link-button {
   .header-menu .user-meta .link-button.danger {
     width: 100%;
     justify-content: center;
-    padding-block: clamp(0.85rem, 3.2vw, 1.1rem);
-    padding-inline: clamp(1.1rem, 4vw, 1.4rem);
-    font-size: clamp(1.05rem, 3.6vw, 1.18rem);
+    padding-block: clamp(0.95rem, 3.4vw, 1.2rem);
+    padding-inline: clamp(1.2rem, 4.2vw, 1.55rem);
+    font-size: clamp(1.08rem, 3.8vw, 1.22rem);
+    min-height: clamp(3.4rem, 16vw, 4rem);
     border-radius: 20px;
   }
 
@@ -648,9 +652,10 @@ header .link-button {
     display: flex;
     width: 100%;
     justify-content: center;
-    padding-block: clamp(0.9rem, 3.4vw, 1.15rem);
-    padding-inline: clamp(1.1rem, 4vw, 1.45rem);
-    font-size: clamp(1.05rem, 3.7vw, 1.2rem);
+    padding-block: clamp(0.95rem, 3.4vw, 1.2rem);
+    padding-inline: clamp(1.2rem, 4.2vw, 1.55rem);
+    font-size: clamp(1.08rem, 3.9vw, 1.24rem);
+    min-height: clamp(3.4rem, 16vw, 4rem);
     border-radius: 20px;
     background: #ffffff;
     color: #0f172a;
