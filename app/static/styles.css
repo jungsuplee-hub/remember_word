@@ -179,11 +179,12 @@ header::after {
 
 .header-menu {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
   gap: clamp(0.65rem, 2vw, 1rem);
   position: relative;
-  width: min(100%, 360px);
+  width: 100%;
 }
 
 .header-menu-toggle {
@@ -267,10 +268,11 @@ body.mobile-menu-open .header-menu-icon::after {
 
 .header-links {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
   gap: clamp(0.5rem, 1.5vw, 0.75rem);
-  width: 100%;
+  width: auto;
   margin-top: 0;
   padding: 0;
   border-radius: 0;
@@ -351,12 +353,12 @@ body[data-guide-page="exam-session"] .header-description {
 body:not([data-guide-page="exam-session"]) .header-links,
 body[data-guide-page="exam-session"] .header-links {
   gap: clamp(0.45rem, 1.6vw, 0.75rem);
-  width: 100%;
+  width: auto;
 }
 
 body:not([data-guide-page="exam-session"]) .header-links .link-button,
 body[data-guide-page="exam-session"] .header-links .link-button {
-  width: 100%;
+  width: auto;
   justify-content: center;
   padding-block: 0.55rem;
   font-size: clamp(0.85rem, 1.75vw, 0.95rem);
@@ -497,22 +499,24 @@ header .link-button {
   }
 
   .header-menu {
-    align-items: stretch;
+    justify-content: center;
+    gap: clamp(0.55rem, 2.4vw, 0.9rem);
   }
 
   .user-meta {
-    justify-content: flex-start;
-    width: 100%;
+    justify-content: center;
+    width: auto;
   }
 
   .user-meta .link-button,
   .user-meta .link-button.secondary,
   .user-meta .link-button.danger {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
   }
 
   body:not([data-guide-page="exam-session"]) .header-links,
   body[data-guide-page="exam-session"] .header-links {
+    justify-content: center;
     gap: 0.45rem;
     padding: 0;
   }
@@ -572,6 +576,7 @@ header .link-button {
   }
 
   .header-menu {
+    flex-direction: column;
     position: fixed;
     top: 0;
     right: 0;
@@ -582,6 +587,7 @@ header .link-button {
     backdrop-filter: blur(22px);
     box-shadow: -26px 0 60px rgba(15, 23, 42, 0.3);
     align-items: stretch;
+    justify-content: flex-start;
     gap: clamp(1.2rem, 5vw, 1.8rem);
     transform: translateX(110%);
     opacity: 0;
