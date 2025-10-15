@@ -640,9 +640,10 @@ header .link-button {
 
   .header-menu .header-links .link-button {
     width: 100%;
-    justify-content: flex-start;
-    padding-block: 0.6rem;
-    font-size: 0.95rem;
+    justify-content: center;
+    padding-block: 0.65rem;
+    padding-inline: 1.3rem;
+    font-size: 1rem;
   }
 
   .header-menu .header-links .link-button.secondary {
