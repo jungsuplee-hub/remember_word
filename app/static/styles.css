@@ -744,6 +744,19 @@ body[data-guide-page="manage"] main {
   z-index: 1;
 }
 
+@media (min-width: 1200px) {
+  body[data-guide-page="manage"] main {
+    grid-template-columns:
+      minmax(280px, 0.8fr)
+      minmax(280px, 0.85fr)
+      minmax(520px, 1.35fr);
+    grid-template-areas: "folders groups words";
+    grid-template-rows: auto;
+    max-width: 1440px;
+    width: min(100%, 1440px);
+  }
+}
+
 .count-badge {
   display: inline-flex;
   align-items: center;
