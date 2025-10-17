@@ -13,6 +13,7 @@ const state = {
     awaitingResult: false,
     lastResult: null,
     pendingSubmissions: 0,
+    answers: {},
   },
 };
 
@@ -32,6 +33,7 @@ const summaryBadge = document.querySelector('#exam-session-summary-badge');
 const previewBtn = document.querySelector('#exam-session-preview');
 const failBtn = document.querySelector('#exam-session-fail');
 const successBtn = document.querySelector('#exam-session-success');
+const previousBtn = document.querySelector('#exam-session-previous');
 const stopBtn = document.querySelector('#exam-session-stop');
 const retryBtn = document.querySelector('#exam-session-retry');
 const returnBtn = document.querySelector('#exam-session-return');
@@ -253,6 +255,7 @@ function resetQuizState() {
   state.quiz.awaitingResult = false;
   state.quiz.lastResult = null;
   state.quiz.pendingSubmissions = 0;
+  state.quiz.answers = {};
   resetPreview();
   if (questionContainer) {
     questionContainer.classList.add('hidden');
@@ -272,6 +275,7 @@ function resetQuizState() {
   if (previewBtn) previewBtn.disabled = true;
   if (failBtn) failBtn.disabled = true;
   if (successBtn) successBtn.disabled = true;
+  if (previousBtn) previousBtn.disabled = true;
   if (stopBtn) stopBtn.disabled = true;
   showPlaceholder('진행할 시험 정보를 찾을 수 없습니다.');
 }
@@ -314,6 +318,7 @@ function showQuestion() {
   if (failBtn) failBtn.disabled = false;
   if (successBtn) successBtn.disabled = false;
   if (previewBtn) previewBtn.disabled = false;
+  if (previousBtn) previousBtn.disabled = state.quiz.index === 0;
   if (stopBtn) stopBtn.disabled = false;
   updateProgressUI();
 }
@@ -391,6 +396,7 @@ async function startExam(payload) {
   state.quiz.index = 0;
   state.quiz.progress = null;
   state.quiz.awaitingResult = false;
+  state.quiz.answers = {};
   hidePlaceholder();
   if (content) content.classList.remove('hidden');
   if (questionContainer) questionContainer.classList.add('hidden');
@@ -415,6 +421,7 @@ async function startExam(payload) {
       incorrect_question_ids: [],
     };
     state.quiz.pendingSubmissions = 0;
+    state.quiz.answers = {};
     state.quiz.awaitingResult = false;
     showQuestion();
     showToast('시험을 시작합니다.');
@@ -438,7 +445,12 @@ function cloneProgress(progress) {
   };
 }
 
-function applyOptimisticProgress(questionId, isCorrect) {
+function applyOptimisticProgress(
+  questionId,
+  isCorrect,
+  wasPreviouslyAnswered,
+  previousCorrect,
+) {
   const current = cloneProgress(state.quiz.progress) || {
     session_id: state.quiz.sessionId,
     total: state.quiz.questions.length,
@@ -447,12 +459,25 @@ function applyOptimisticProgress(questionId, isCorrect) {
     remaining: state.quiz.questions.length,
     incorrect_question_ids: [],
   };
-  current.answered = Math.min(current.total, current.answered + 1);
-  if (isCorrect) {
-    current.correct = Math.min(current.total, current.correct + 1);
-    current.incorrect_question_ids = current.incorrect_question_ids.filter((id) => id !== questionId);
-  } else if (!current.incorrect_question_ids.includes(questionId)) {
-    current.incorrect_question_ids = [...current.incorrect_question_ids, questionId];
+  if (!wasPreviouslyAnswered) {
+    current.answered = Math.min(current.total, current.answered + 1);
+    if (isCorrect) {
+      current.correct = Math.min(current.total, current.correct + 1);
+      current.incorrect_question_ids = current.incorrect_question_ids.filter((id) => id !== questionId);
+    } else if (!current.incorrect_question_ids.includes(questionId)) {
+      current.incorrect_question_ids = [...current.incorrect_question_ids, questionId];
+    }
+  } else {
+    if (previousCorrect && !isCorrect) {
+      current.correct = Math.max(0, current.correct - 1);
+    } else if (!previousCorrect && isCorrect) {
+      current.correct = Math.min(current.total, current.correct + 1);
+    }
+    if (isCorrect) {
+      current.incorrect_question_ids = current.incorrect_question_ids.filter((id) => id !== questionId);
+    } else if (!current.incorrect_question_ids.includes(questionId)) {
+      current.incorrect_question_ids = [...current.incorrect_question_ids, questionId];
+    }
   }
   current.remaining = Math.max(0, current.total - current.answered);
   return current;
@@ -482,15 +507,30 @@ function submitResult(isCorrect) {
   const originalIndex = state.quiz.index;
   const wasLastQuestion = originalIndex >= state.quiz.questions.length - 1;
   const previousProgress = cloneProgress(state.quiz.progress);
+  const previousAnswer = state.quiz.answers?.[question.id]
+    ? { ...state.quiz.answers[question.id] }
+    : null;
+  const wasPreviouslyAnswered = Boolean(previousAnswer);
+  const previousCorrect = previousAnswer ? Boolean(previousAnswer.isCorrect) : false;
 
   state.quiz.awaitingResult = true;
   hideAnswerPreview();
   if (failBtn) failBtn.disabled = true;
   if (successBtn) successBtn.disabled = true;
   if (previewBtn) previewBtn.disabled = true;
+  if (previousBtn) previousBtn.disabled = true;
 
-  const optimisticProgress = applyOptimisticProgress(question.id, isCorrect);
+  const optimisticProgress = applyOptimisticProgress(
+    question.id,
+    isCorrect,
+    wasPreviouslyAnswered,
+    previousCorrect,
+  );
   state.quiz.progress = optimisticProgress;
+  if (!state.quiz.answers) {
+    state.quiz.answers = {};
+  }
+  state.quiz.answers[question.id] = { isCorrect };
   updateProgressUI();
 
   if (wasLastQuestion) {
@@ -521,6 +561,11 @@ function submitResult(isCorrect) {
       }
     })
     .catch((err) => {
+      if (previousAnswer) {
+        state.quiz.answers[question.id] = previousAnswer;
+      } else if (state.quiz.answers) {
+        delete state.quiz.answers[question.id];
+      }
       handleSubmissionError(previousProgress, originalIndex, wasLastQuestion, err);
     })
     .finally(() => {
@@ -529,6 +574,14 @@ function submitResult(isCorrect) {
         state.quiz.awaitingResult = false;
       }
     });
+}
+
+function handlePreviousQuestion() {
+  if (!state.quiz.active || state.quiz.awaitingResult) return;
+  if (state.quiz.index <= 0) return;
+  state.quiz.index = Math.max(0, state.quiz.index - 1);
+  hideAnswerPreview();
+  showQuestion();
 }
 
 async function handleRetry() {
@@ -559,6 +612,7 @@ async function handleRetry() {
       incorrect_question_ids: [],
     };
     state.quiz.pendingSubmissions = 0;
+    state.quiz.answers = {};
     showQuestion();
     showToast('틀린 문제를 다시 시작합니다.');
   } catch (err) {
@@ -662,6 +716,7 @@ async function init() {
 
 if (failBtn) failBtn.addEventListener('click', () => submitResult(false));
 if (successBtn) successBtn.addEventListener('click', () => submitResult(true));
+if (previousBtn) previousBtn.addEventListener('click', handlePreviousQuestion);
 if (retryBtn) retryBtn.addEventListener('click', handleRetry);
 if (returnBtn) returnBtn.addEventListener('click', handleReturnToExam);
 if (stopBtn) stopBtn.addEventListener('click', handleStopExam);
